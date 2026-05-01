@@ -1,6 +1,5 @@
 package requests;
 
-import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
@@ -21,7 +20,6 @@ public class CreateAccountRequester extends Request {
                 .post("/api/v1/accounts")
                 .then()
                 .assertThat()
-                .spec(responseSpecification)
-                .statusCode(201);
+                .spec(responseSpecification);
     }
 }
