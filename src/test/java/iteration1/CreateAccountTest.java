@@ -1,38 +1,31 @@
 package iteration1;
 
-import generators.RandomData;
-import io.restassured.http.ContentType;
+import generators.RandomModelGenerator;
 import models.CreateUserRequest;
-import models.LoginUserRequest;
+import models.CreateUserResponse;
 import org.junit.jupiter.api.Test;
-import requests.AdminCreateUserRequester;
-import requests.CreateAccountRequester;
-import requests.LoginUserRequester;
+import requests.skelethon.Endpoint;
+import requests.skelethon.requests.CrudRequester;
+import requests.skelethon.steps.AdminSteps;
 import specs.RequestSpecs;
 import specs.ResponseSpecs;
-
-import static io.restassured.RestAssured.given;
-import static io.restassured.RestAssured.requestSpecification;
 
 public class CreateAccountTest extends BaseTest {
 
     @Test
     public void userCanCreateAccountTest() {
-        CreateUserRequest userRequest = CreateUserRequest
-                .builder()
-                .username(RandomData.getUsername())
-                .password(RandomData.getPassword())
-                .role("USER")
-                .build();
+        CreateUserRequest userRequest = AdminSteps.createUser();
 
-        new AdminCreateUserRequester(
-                RequestSpecs.adminSpec(),
-                ResponseSpecs.entityWasCreated())
-                .post(userRequest);
-
-        new CreateAccountRequester(
+        new CrudRequester(
                 RequestSpecs.authAsUser(userRequest.getUsername(), userRequest.getPassword()),
-                ResponseSpecs.entityWasCreated())
+                ResponseSpecs.entityWasCreated(),
+                Endpoint.ACCOUNTS)
+                .post(null);
+
+        new CrudRequester(
+                RequestSpecs.authAsUser(userRequest.getUsername(), userRequest.getPassword()),
+                ResponseSpecs.entityWasCreated(),
+                Endpoint.ACCOUNTS)
                 .post(null);
     }
 }

@@ -1,13 +1,14 @@
 package iteration1;
 
 import generators.RandomData;
-import models.CreateUserRequest;
-import models.LoginUserRequest;
-import models.UserRole;
+import generators.RandomModelGenerator;
+import models.*;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import requests.AdminCreateUserRequester;
-import requests.LoginUserRequester;
+import requests.skelethon.Endpoint;
+import requests.skelethon.requests.CrudRequester;
+import requests.skelethon.requests.ValidatedCrudRequester;
+import requests.skelethon.steps.AdminSteps;
 import specs.RequestSpecs;
 import specs.ResponseSpecs;
 
@@ -21,34 +22,25 @@ public class LoginUserTest {
                 .password("admin")
                 .build();
 
-        new LoginUserRequester(
+        new ValidatedCrudRequester<LoginUserResponse>(
                 RequestSpecs.unAuthSpec(),
-                ResponseSpecs.requestReturnsOK())
+                ResponseSpecs.requestReturnsOK(),
+                Endpoint.LOGIN)
                 .post(UserRequest);
 
     }
 
     @Test
     public void userCanGenerateAuthTokenTest() {
-        CreateUserRequest createUserRequest = CreateUserRequest
-                .builder()
-                .username(RandomData.getUsername())
-                .password(RandomData.getPassword())
-                .role(UserRole.USER.toString())
-                .build();
+        CreateUserRequest userRequest = AdminSteps.createUser();
 
-        new AdminCreateUserRequester(
-                RequestSpecs.adminSpec(),
-                ResponseSpecs.entityWasCreated())
-                .post(createUserRequest);
-
-
-        new LoginUserRequester(
+        new CrudRequester(
                 RequestSpecs.unAuthSpec(),
-                ResponseSpecs.requestReturnsOK())
+                ResponseSpecs.requestReturnsOK(),
+                Endpoint.LOGIN)
                 .post(LoginUserRequest.builder()
-                        .username(createUserRequest.getUsername())
-                        .password(createUserRequest.getPassword()).build())
+                        .username(userRequest.getUsername())
+                        .password(userRequest.getPassword()).build())
                 .assertThat()
                 .header("Authorization", Matchers.notNullValue());
 
