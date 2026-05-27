@@ -32,6 +32,12 @@ public class RequestSpecs {
         return defaulytRequestBuilder().build();
     }
 
+    public static RequestSpecification invalidTokenSpec() {
+        return defaulytRequestBuilder()
+                .addHeader("Authorization", "Bearer invalid.token.garbage")
+                .build();
+    }
+
     public static RequestSpecification adminSpec() {
         return defaulytRequestBuilder()
                 .addHeader("Authorization", "Basic YWRtaW46YWRtaW4=")

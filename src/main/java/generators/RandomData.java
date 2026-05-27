@@ -2,6 +2,8 @@ package generators;
 
 import org.apache.commons.lang3.RandomStringUtils;
 
+import java.util.Random;
+
 public class RandomData {
     private RandomData(){}
 
@@ -12,5 +14,15 @@ public class RandomData {
         return RandomStringUtils.randomAlphabetic(3).toUpperCase() +
                 RandomStringUtils.randomAlphabetic(3).toLowerCase() + "!" +
                 RandomStringUtils.randomNumeric(2);
+    }
+    public static double randomDeposit() {
+        Random random = new Random();
+        return Math.round((0.01 + random.nextDouble() * 4999.99) * 100.0) / 100.0;
+    }
+
+    // Диапазон трансфера: 0.01 — 10000.0
+    public static double randomTransfer() {
+        Random random = new Random();
+        return Math.round((0.01 + random.nextDouble() * 9999.99) * 100.0) / 100.0;
     }
 }

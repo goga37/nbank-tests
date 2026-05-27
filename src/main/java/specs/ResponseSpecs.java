@@ -28,4 +28,32 @@ public class ResponseSpecs {
                 .expectBody(errorKey, Matchers.hasItem(errorValue))
                 .build();
     }
+
+    public static ResponseSpecification responseStatus400(String expectedMessage) {
+        return defaultResponseBuilder()
+                .expectStatusCode(HttpStatus.SC_BAD_REQUEST)
+                .expectBody(Matchers.equalTo(expectedMessage))
+                .build();
+    }
+
+    // 400 без проверки тела — когда сообщение нам не важно или неизвестно
+    public static ResponseSpecification responseStatus400() {
+        return defaultResponseBuilder()
+                .expectStatusCode(HttpStatus.SC_BAD_REQUEST)
+                .build();
+    }
+
+    public static ResponseSpecification responseStatus401() {
+        return defaultResponseBuilder()
+                .expectStatusCode(HttpStatus.SC_UNAUTHORIZED)
+                .expectBody(Matchers.emptyOrNullString())
+                .build();
+    }
+
+    public static ResponseSpecification responseStatus403() {
+        return defaultResponseBuilder()
+                .expectStatusCode(HttpStatus.SC_FORBIDDEN)
+                .expectBody(Matchers.equalTo("Unauthorized access to account"))
+                .build();
+    }
 }

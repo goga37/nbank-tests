@@ -12,7 +12,7 @@ import requests.skelethon.steps.AdminSteps;
 import specs.RequestSpecs;
 import specs.ResponseSpecs;
 
-public class LoginUserTest {
+public class LoginUserTest extends BaseTest{
 
     @Test
     public void adminCanGenerateAuthTokenTest() {

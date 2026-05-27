@@ -10,14 +10,19 @@ import specs.ResponseSpecs;
 
 public class AdminSteps {
 
+    // Генерирует пользователя и возвращает request (обратная совместимость)
     public static CreateUserRequest createUser() {
         CreateUserRequest userRequest = RandomModelGenerator.generate(CreateUserRequest.class);
+        createUser(userRequest);
+        return userRequest;
+    }
 
-        new ValidatedCrudRequester<CreateUserResponse>(
+    // Создаёт пользователя по готовому request, возвращает response с userId
+    public static CreateUserResponse createUser(CreateUserRequest userRequest) {
+        return new ValidatedCrudRequester<CreateUserResponse>(
                 RequestSpecs.adminSpec(),
                 ResponseSpecs.entityWasCreated(),
                 Endpoint.ADMIN_USER)
                 .post(userRequest);
-        return userRequest;
     }
 }
