@@ -19,10 +19,4 @@ public class RandomData {
         Random random = new Random();
         return Math.round((0.01 + random.nextDouble() * 4999.99) * 100.0) / 100.0;
     }
-
-    // Диапазон трансфера: 0.01 — 10000.0
-    public static double randomTransfer() {
-        Random random = new Random();
-        return Math.round((0.01 + random.nextDouble() * 9999.99) * 100.0) / 100.0;
-    }
 }
