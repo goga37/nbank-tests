@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 public class Transaction extends BaseModel {
     private int id;
     private double amount;
-    private String type;
+    private TransactionType type;
     private String timestamp;
     private long relatedAccountId;
 }

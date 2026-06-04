@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import requests.skelethon.steps.AccountSteps;
+import specs.ApiError;
 import specs.RequestSpecs;
 import specs.ResponseSpecs;
 
@@ -39,7 +40,7 @@ public class CustomerProfileTest extends BaseTest {
     public void updateProfileUnauthorizedReturns401() {
         updateProfile(
                 RequestSpecs.unAuthSpec(),
-                CustomerProfileRequest.builder().name("John Smith").build(),
+                RandomModelGenerator.generate(CustomerProfileRequest.class),
                 ResponseSpecs.responseStatus401()
         );
     }
@@ -48,7 +49,7 @@ public class CustomerProfileTest extends BaseTest {
     public void updateProfileInvalidTokenReturns401() {
         updateProfile(
                 RequestSpecs.invalidTokenSpec(),
-                CustomerProfileRequest.builder().name("John Smith").build(),
+                RandomModelGenerator.generate(CustomerProfileRequest.class),
                 ResponseSpecs.responseStatus401()
         );
     }
@@ -61,7 +62,7 @@ public class CustomerProfileTest extends BaseTest {
         updateProfile(
                 user.spec(),
                 CustomerProfileRequest.builder().name(name).build(),
-                ResponseSpecs.responseStatus400("Name must contain two words with letters only")
+                ResponseSpecs.responseStatus400(ApiError.INVALID_PROFILE_NAME)
         );
 
         Customer profile = getProfile(user);

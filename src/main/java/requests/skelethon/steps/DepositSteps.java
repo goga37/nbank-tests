@@ -7,11 +7,11 @@ import models.AccountsDepositRequest;
 import requests.skelethon.Endpoint;
 import requests.skelethon.requests.CrudRequester;
 import requests.skelethon.requests.ValidatedCrudRequester;
-import specs.RequestSpecs;
 import specs.ResponseSpecs;
 
 public class DepositSteps {
 
+    // Успешный депозит — десериализует ответ в AccountResponse
     public static AccountResponse deposit(AccountSteps.UserContext user, double amount) {
         return new ValidatedCrudRequester<AccountResponse>(
                 user.spec(),
@@ -20,30 +20,10 @@ public class DepositSteps {
                 .post(buildRequest(user.accountId(), amount));
     }
 
-    public static void depositWithoutAuth(long accountId, double amount) {
-        depositExpecting(RequestSpecs.unAuthSpec(), accountId, amount, ResponseSpecs.responseStatus401());
-    }
-
-    public static void depositWithInvalidToken(long accountId, double amount) {
-        depositExpecting(RequestSpecs.invalidTokenSpec(), accountId, amount, ResponseSpecs.responseStatus401());
-    }
-
-    public static void depositToForeignAccount(AccountSteps.UserContext user, long foreignAccountId, double amount) {
-        depositExpecting(user.spec(), foreignAccountId, amount, ResponseSpecs.responseStatus403());
-    }
-
-    public static void depositToNonExistentAccount(AccountSteps.UserContext user, long nonExistentAccountId, double amount) {
-        depositExpecting(user.spec(), nonExistentAccountId, amount, ResponseSpecs.responseStatus403());
-    }
-
-    // Невалидная сумма → 400 с конкретным сообщением об ошибке
-    public static void depositInvalidAmount(AccountSteps.UserContext user, double amount, String expectedMessage) {
-        depositExpecting(user.spec(), user.accountId(), amount, ResponseSpecs.responseStatus400(expectedMessage));
-    }
-
-    private static void depositExpecting(RequestSpecification spec, long accountId,
-                                         double amount, ResponseSpecification responseSpec) {
-        new CrudRequester(spec, responseSpec, Endpoint.DEPOSIT)
+    // Депозит с произвольными спецификациями — для негативных сценариев
+    public static void deposit(RequestSpecification reqSpec, long accountId,
+                               double amount, ResponseSpecification respSpec) {
+        new CrudRequester(reqSpec, respSpec, Endpoint.DEPOSIT)
                 .post(buildRequest(accountId, amount));
     }
 

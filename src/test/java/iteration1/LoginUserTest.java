@@ -1,6 +1,6 @@
 package iteration1;
 
-import generators.RandomData;
+import configs.Config;
 import generators.RandomModelGenerator;
 import models.*;
 import org.hamcrest.Matchers;
@@ -12,38 +12,38 @@ import requests.skelethon.steps.AdminSteps;
 import specs.RequestSpecs;
 import specs.ResponseSpecs;
 
-public class LoginUserTest extends BaseTest{
+public class LoginUserTest extends BaseTest {
 
     @Test
     public void adminCanGenerateAuthTokenTest() {
-        LoginUserRequest UserRequest = LoginUserRequest
-                .builder()
-                .username("admin")
-                .password("admin")
+        LoginUserRequest loginRequest = LoginUserRequest.builder()
+                .username(Config.getProperty("admin.username"))
+                .password(Config.getProperty("admin.password"))
                 .build();
 
         new ValidatedCrudRequester<LoginUserResponse>(
                 RequestSpecs.unAuthSpec(),
                 ResponseSpecs.requestReturnsOK(),
                 Endpoint.LOGIN)
-                .post(UserRequest);
-
+                .post(loginRequest);
     }
 
     @Test
     public void userCanGenerateAuthTokenTest() {
-        CreateUserRequest userRequest = AdminSteps.createUser();
+        LoginUserRequest loginRequest = RandomModelGenerator.generate(LoginUserRequest.class);
+
+        AdminSteps.createUser(CreateUserRequest.builder()
+                .username(loginRequest.getUsername())
+                .password(loginRequest.getPassword())
+                .role("USER")
+                .build());
 
         new CrudRequester(
                 RequestSpecs.unAuthSpec(),
                 ResponseSpecs.requestReturnsOK(),
                 Endpoint.LOGIN)
-                .post(LoginUserRequest.builder()
-                        .username(userRequest.getUsername())
-                        .password(userRequest.getPassword()).build())
+                .post(loginRequest)
                 .assertThat()
                 .header("Authorization", Matchers.notNullValue());
-
     }
 }
-

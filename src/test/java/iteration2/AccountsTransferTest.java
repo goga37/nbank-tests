@@ -3,6 +3,8 @@ package iteration2;
 import iteration1.BaseTest;
 import models.AccountResponse;
 import models.AccountsTransferResponse;
+import models.Transaction;
+import models.TransactionType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -10,6 +12,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import requests.skelethon.steps.AccountSteps;
 import requests.skelethon.steps.TransferSteps;
+import specs.ApiError;
+import specs.RequestSpecs;
+import specs.ResponseSpecs;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -26,7 +31,7 @@ public class AccountsTransferTest extends BaseTest {
 
     @Test
     public void transferSuccess() {
-        double amount = randomDeposit(); // диапазон randomDeposit ≤ 5000 — один deposit() покрывает всю сумму
+        double amount = randomDeposit();
         AccountSteps.UserContext user1 = createUserWithAccount();
         AccountSteps.UserContext user2 = createUserWithAccount();
         deposit(user1, amount);
@@ -40,13 +45,21 @@ public class AccountsTransferTest extends BaseTest {
         assertThatAccount(account1)
                 .hasBalance(0)
                 .hasTransactionCount(2)
-                .hasTransaction("TRANSFER_OUT", amount, user2.accountId());
+                .hasTransaction(Transaction.builder()
+                        .type(TransactionType.TRANSFER_OUT)
+                        .amount(amount)
+                        .relatedAccountId(user2.accountId())
+                        .build());
 
         AccountResponse account2 = AccountSteps.getAccounts(user2).getFirst();
         assertThatAccount(account2)
                 .hasBalance(amount)
                 .hasTransactionCount(1)
-                .hasTransaction("TRANSFER_IN", amount, user1.accountId());
+                .hasTransaction(Transaction.builder()
+                        .type(TransactionType.TRANSFER_IN)
+                        .amount(amount)
+                        .relatedAccountId(user1.accountId())
+                        .build());
     }
 
     @Test
@@ -75,12 +88,20 @@ public class AccountsTransferTest extends BaseTest {
         assertThatAccount(senderAccount)
                 .hasBalance(0)
                 .hasTransactionCount(2)
-                .hasTransaction("TRANSFER_OUT", 100.0, userSecondAccount.accountId());
+                .hasTransaction(Transaction.builder()
+                        .type(TransactionType.TRANSFER_OUT)
+                        .amount(100.0)
+                        .relatedAccountId(userSecondAccount.accountId())
+                        .build());
 
         assertThatAccount(receiverAccount)
                 .hasBalance(100.0)
                 .hasTransactionCount(1)
-                .hasTransaction("TRANSFER_IN", 100.0, user.accountId());
+                .hasTransaction(Transaction.builder()
+                        .type(TransactionType.TRANSFER_IN)
+                        .amount(100.0)
+                        .relatedAccountId(user.accountId())
+                        .build());
     }
 
     @ParameterizedTest
@@ -100,31 +121,41 @@ public class AccountsTransferTest extends BaseTest {
         AccountResponse account1 = AccountSteps.getAccounts(user1).getFirst();
         assertThatAccount(account1)
                 .hasBalance(10000.0 - amount)
-                .hasTransactionCount(3) // 2×DEPOSIT + 1×TRANSFER_OUT
-                .hasTransaction("TRANSFER_OUT", amount, user2.accountId());
+                .hasTransactionCount(3)
+                .hasTransaction(Transaction.builder()
+                        .type(TransactionType.TRANSFER_OUT)
+                        .amount(amount)
+                        .relatedAccountId(user2.accountId())
+                        .build());
 
         AccountResponse account2 = AccountSteps.getAccounts(user2).getFirst();
         assertThatAccount(account2)
                 .hasBalance(amount)
                 .hasTransactionCount(1)
-                .hasTransaction("TRANSFER_IN", amount, user1.accountId());
+                .hasTransaction(Transaction.builder()
+                        .type(TransactionType.TRANSFER_IN)
+                        .amount(amount)
+                        .relatedAccountId(user1.accountId())
+                        .build());
     }
 
     @Test
     public void transferUnauthorizedReturns401() {
-        TransferSteps.transferWithoutAuth(1L, 2L, 100.0);
+        TransferSteps.transfer(RequestSpecs.unAuthSpec(), 1L, 2L, 100.0, ResponseSpecs.responseStatus401());
     }
 
     @Test
     public void transferInvalidTokenReturns401() {
-        TransferSteps.transferWithInvalidToken(1L, 2L, 100.0);
+        TransferSteps.transfer(RequestSpecs.invalidTokenSpec(), 1L, 2L, 100.0, ResponseSpecs.responseStatus401());
     }
 
     @Test
     public void transferInsufficientFundsReturns400() {
         AccountSteps.UserContext user1 = createUserWithAccount();
         AccountSteps.UserContext user2 = createUserWithAccount();
-        TransferSteps.transferWithInsufficientFunds(user1, user2, 100.0);
+
+        TransferSteps.transfer(user1.spec(), user1.accountId(), user2.accountId(), 100.0,
+                ResponseSpecs.responseStatus400(ApiError.TRANSFER_INSUFFICIENT_FUNDS));
 
         AccountResponse account1 = AccountSteps.getAccounts(user1).getFirst();
         AccountResponse account2 = AccountSteps.getAccounts(user2).getFirst();
@@ -134,19 +165,21 @@ public class AccountsTransferTest extends BaseTest {
 
     private static Stream<Arguments> invalidTransferAmounts() {
         return Stream.of(
-                Arguments.of(-1.0, "Transfer amount must be at least 0.01"),
-                Arguments.of(0.0, "Transfer amount must be at least 0.01"),
-                Arguments.of(10000.01, "Transfer amount cannot exceed 10000"),
-                Arguments.of(10001.0, "Transfer amount cannot exceed 10000")
+                Arguments.of(-1.0, ApiError.TRANSFER_AMOUNT_TOO_SMALL),
+                Arguments.of(0.0, ApiError.TRANSFER_AMOUNT_TOO_SMALL),
+                Arguments.of(10000.01, ApiError.TRANSFER_AMOUNT_TOO_LARGE),
+                Arguments.of(10001.0, ApiError.TRANSFER_AMOUNT_TOO_LARGE)
         );
     }
 
     @ParameterizedTest
     @MethodSource("invalidTransferAmounts")
-    public void transferInvalidAmountReturns400(double amount, String expectedMessage) {
+    public void transferInvalidAmountReturns400(double amount, ApiError expectedError) {
         AccountSteps.UserContext user1 = createUserWithAccount();
         AccountSteps.UserContext user2 = createUserWithAccount();
-        TransferSteps.transferInvalidAmount(user1, user2, amount, expectedMessage);
+
+        TransferSteps.transfer(user1.spec(), user1.accountId(), user2.accountId(), amount,
+                ResponseSpecs.responseStatus400(expectedError));
 
         AccountResponse account1 = AccountSteps.getAccounts(user1).getFirst();
         AccountResponse account2 = AccountSteps.getAccounts(user2).getFirst();
@@ -158,7 +191,9 @@ public class AccountsTransferTest extends BaseTest {
     public void transferFromAnotherUsersAccountReturns403() {
         AccountSteps.UserContext user1 = createUserWithAccount();
         AccountSteps.UserContext user2 = createUserWithAccount();
-        TransferSteps.transferFromForeignAccount(user2, user1.accountId(), user2.accountId(), 100.0);
+
+        TransferSteps.transfer(user2.spec(), user1.accountId(), user2.accountId(), 100.0,
+                ResponseSpecs.responseStatus403());
 
         AccountResponse account1 = AccountSteps.getAccounts(user1).getFirst();
         AccountResponse account2 = AccountSteps.getAccounts(user2).getFirst();
@@ -170,11 +205,13 @@ public class AccountsTransferTest extends BaseTest {
     public void transferToNonExistentAccountReturns400() {
         AccountSteps.UserContext user = createUserWithAccount();
         deposit(user, 100.0);
-        TransferSteps.transferToNonExistentAccount(user, 9999312L, 100.0);
+
+        TransferSteps.transfer(user.spec(), user.accountId(), 9999312L, 100.0,
+                ResponseSpecs.responseStatus400(ApiError.TRANSFER_INSUFFICIENT_FUNDS));
 
         AccountResponse account = AccountSteps.getAccounts(user).getFirst();
         assertThatAccount(account)
                 .hasBalance(100.0)
-                .hasTransactionCount(1); // только DEPOSIT, TRANSFER_OUT не должно быть
+                .hasTransactionCount(1);
     }
 }

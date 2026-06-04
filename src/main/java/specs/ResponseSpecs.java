@@ -7,6 +7,7 @@ import org.hamcrest.Matchers;
 
 public class ResponseSpecs {
     private ResponseSpecs() {}
+
     public static ResponseSpecBuilder defaultResponseBuilder() {
         return new ResponseSpecBuilder();
     }
@@ -16,6 +17,7 @@ public class ResponseSpecs {
                 .expectStatusCode(HttpStatus.SC_CREATED)
                 .build();
     }
+
     public static ResponseSpecification requestReturnsOK() {
         return defaultResponseBuilder()
                 .expectStatusCode(HttpStatus.SC_OK)
@@ -29,10 +31,11 @@ public class ResponseSpecs {
                 .build();
     }
 
-    public static ResponseSpecification responseStatus400(String expectedMessage) {
+    // 400 с конкретной ошибкой из API-контракта
+    public static ResponseSpecification responseStatus400(ApiError error) {
         return defaultResponseBuilder()
                 .expectStatusCode(HttpStatus.SC_BAD_REQUEST)
-                .expectBody(Matchers.equalTo(expectedMessage))
+                .expectBody(Matchers.equalTo(error.getMessage()))
                 .build();
     }
 

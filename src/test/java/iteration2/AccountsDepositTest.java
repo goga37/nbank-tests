@@ -2,6 +2,8 @@ package iteration2;
 
 import iteration1.BaseTest;
 import models.AccountResponse;
+import models.Transaction;
+import models.TransactionType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -9,6 +11,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import requests.skelethon.steps.AccountSteps;
 import requests.skelethon.steps.DepositSteps;
+import specs.ApiError;
+import specs.RequestSpecs;
+import specs.ResponseSpecs;
 
 import java.util.stream.Stream;
 
@@ -29,7 +34,11 @@ public class AccountsDepositTest extends BaseTest {
         assertThatAccount(response)
                 .hasBalance(amount)
                 .hasTransactionCount(1)
-                .hasTransaction("DEPOSIT", amount, user.accountId());
+                .hasTransaction(Transaction.builder()
+                        .type(TransactionType.DEPOSIT)
+                        .amount(amount)
+                        .relatedAccountId(user.accountId())
+                        .build());
 
         AccountResponse account = AccountSteps.getAccounts(user).getFirst();
         assertThatAccount(account)
@@ -46,12 +55,10 @@ public class AccountsDepositTest extends BaseTest {
         deposit(user, amount1);
         AccountResponse response = deposit(user, amount2);
 
-        // После второго депозита: баланс суммируется, транзакций стало 2
         assertThatAccount(response)
                 .hasBalance(amount1 + amount2)
                 .hasTransactionCount(2);
 
-        // GET подтверждает
         AccountResponse account = AccountSteps.getAccounts(user).getFirst();
         assertThatAccount(account)
                 .hasBalance(amount1 + amount2)
@@ -62,7 +69,7 @@ public class AccountsDepositTest extends BaseTest {
     public void depositToNonExistentAccountReturns403() {
         AccountSteps.UserContext user = createUserWithAccount();
 
-        DepositSteps.depositToNonExistentAccount(user, 9999312L, 100.0);
+        DepositSteps.deposit(user.spec(), 9999312L, 100.0, ResponseSpecs.responseStatus403());
 
         AccountResponse account = AccountSteps.getAccounts(user).getFirst();
         assertThatAccount(account).hasBalance(0).hasNoTransactions();
@@ -70,12 +77,12 @@ public class AccountsDepositTest extends BaseTest {
 
     @Test
     public void depositUnauthorizedReturns401() {
-        DepositSteps.depositWithoutAuth(1L, 100.0);
+        DepositSteps.deposit(RequestSpecs.unAuthSpec(), 1L, 100.0, ResponseSpecs.responseStatus401());
     }
 
     @Test
     public void depositInvalidTokenReturns401() {
-        DepositSteps.depositWithInvalidToken(1L, 100.0);
+        DepositSteps.deposit(RequestSpecs.invalidTokenSpec(), 1L, 100.0, ResponseSpecs.responseStatus401());
     }
 
     @Test
@@ -83,7 +90,7 @@ public class AccountsDepositTest extends BaseTest {
         AccountSteps.UserContext user1 = createUserWithAccount();
         AccountSteps.UserContext user2 = createUserWithAccount();
 
-        DepositSteps.depositToForeignAccount(user1, user2.accountId(), 100.0);
+        DepositSteps.deposit(user1.spec(), user2.accountId(), 100.0, ResponseSpecs.responseStatus403());
 
         AccountResponse account1 = AccountSteps.getAccounts(user1).getFirst();
         AccountResponse account2 = AccountSteps.getAccounts(user2).getFirst();
@@ -93,19 +100,19 @@ public class AccountsDepositTest extends BaseTest {
 
     private static Stream<Arguments> invalidAmounts() {
         return Stream.of(
-                Arguments.of(-1.0, "Deposit amount must be at least 0.01"),
-                Arguments.of(0.0, "Deposit amount must be at least 0.01"),
-                Arguments.of(5000.01, "Deposit amount cannot exceed 5000"),
-                Arguments.of(5001.0, "Deposit amount cannot exceed 5000")
+                Arguments.of(-1.0, ApiError.DEPOSIT_AMOUNT_TOO_SMALL),
+                Arguments.of(0.0, ApiError.DEPOSIT_AMOUNT_TOO_SMALL),
+                Arguments.of(5000.01, ApiError.DEPOSIT_AMOUNT_TOO_LARGE),
+                Arguments.of(5001.0, ApiError.DEPOSIT_AMOUNT_TOO_LARGE)
         );
     }
 
     @ParameterizedTest
     @MethodSource("invalidAmounts")
-    public void depositInvalidAmountReturns400(double amount, String expectedMessage) {
+    public void depositInvalidAmountReturns400(double amount, ApiError expectedError) {
         AccountSteps.UserContext user = createUserWithAccount();
 
-        DepositSteps.depositInvalidAmount(user, amount, expectedMessage);
+        DepositSteps.deposit(user.spec(), user.accountId(), amount, ResponseSpecs.responseStatus400(expectedError));
 
         AccountResponse account = AccountSteps.getAccounts(user).getFirst();
         assertThatAccount(account).hasBalance(0).hasNoTransactions();
@@ -121,7 +128,11 @@ public class AccountsDepositTest extends BaseTest {
         assertThatAccount(response)
                 .hasBalance(amount)
                 .hasTransactionCount(1)
-                .hasTransaction("DEPOSIT", amount, user.accountId());
+                .hasTransaction(Transaction.builder()
+                        .type(TransactionType.DEPOSIT)
+                        .amount(amount)
+                        .relatedAccountId(user.accountId())
+                        .build());
 
         AccountResponse account = AccountSteps.getAccounts(user).getFirst();
         assertThatAccount(account)
