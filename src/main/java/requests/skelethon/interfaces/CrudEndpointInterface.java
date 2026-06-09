@@ -4,7 +4,11 @@ import models.BaseModel;
 
 public interface CrudEndpointInterface {
     Object post(BaseModel model);
-    Object get(long id);
-    Object put(long id, BaseModel model);
+
+    default Object post() {
+        return post(null);
+    }
+    Object get();
+    Object put(BaseModel model);
     Object delete(long id);
 }

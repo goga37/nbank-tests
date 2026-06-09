@@ -1,57 +1,49 @@
 package iteration1;
 
-import generators.RandomData;
-import models.CreateUserRequest;
-import models.LoginUserRequest;
-import models.UserRole;
+import configs.Config;
+import generators.RandomModelGenerator;
+import models.*;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import requests.AdminCreateUserRequester;
-import requests.LoginUserRequester;
+import requests.skelethon.Endpoint;
+import requests.skelethon.requests.CrudRequester;
+import requests.skelethon.requests.ValidatedCrudRequester;
+import requests.skelethon.steps.AdminSteps;
 import specs.RequestSpecs;
 import specs.ResponseSpecs;
 
-public class LoginUserTest {
+public class LoginUserTest extends BaseTest {
 
     @Test
     public void adminCanGenerateAuthTokenTest() {
-        LoginUserRequest UserRequest = LoginUserRequest
-                .builder()
-                .username("admin")
-                .password("admin")
+        LoginUserRequest loginRequest = LoginUserRequest.builder()
+                .username(Config.getProperty("admin.username"))
+                .password(Config.getProperty("admin.password"))
                 .build();
 
-        new LoginUserRequester(
+        new ValidatedCrudRequester<LoginUserResponse>(
                 RequestSpecs.unAuthSpec(),
-                ResponseSpecs.requestReturnsOK())
-                .post(UserRequest);
-
+                ResponseSpecs.requestReturnsOK(),
+                Endpoint.LOGIN)
+                .post(loginRequest);
     }
 
     @Test
     public void userCanGenerateAuthTokenTest() {
-        CreateUserRequest createUserRequest = CreateUserRequest
-                .builder()
-                .username(RandomData.getUsername())
-                .password(RandomData.getPassword())
-                .role(UserRole.USER.toString())
-                .build();
+        LoginUserRequest loginRequest = RandomModelGenerator.generate(LoginUserRequest.class);
 
-        new AdminCreateUserRequester(
-                RequestSpecs.adminSpec(),
-                ResponseSpecs.entityWasCreated())
-                .post(createUserRequest);
+        AdminSteps.createUser(CreateUserRequest.builder()
+                .username(loginRequest.getUsername())
+                .password(loginRequest.getPassword())
+                .role("USER")
+                .build());
 
-
-        new LoginUserRequester(
+        new CrudRequester(
                 RequestSpecs.unAuthSpec(),
-                ResponseSpecs.requestReturnsOK())
-                .post(LoginUserRequest.builder()
-                        .username(createUserRequest.getUsername())
-                        .password(createUserRequest.getPassword()).build())
+                ResponseSpecs.requestReturnsOK(),
+                Endpoint.LOGIN)
+                .post(loginRequest)
                 .assertThat()
                 .header("Authorization", Matchers.notNullValue());
-
     }
 }
-

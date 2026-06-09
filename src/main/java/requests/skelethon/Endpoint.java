@@ -2,12 +2,7 @@ package requests.skelethon;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import models.BaseModel;
-import models.CreateAccountResponse;
-import models.CreateUserRequest;
-import models.CreateUserResponse;
-import models.LoginUserRequest;
-import models.LoginUserResponse;
+import models.*;
 
 @Getter
 @AllArgsConstructor
@@ -25,7 +20,31 @@ public enum Endpoint {
     ACCOUNTS(
             "/accounts",
             BaseModel.class,
-            CreateAccountResponse.class
+            AccountResponse.class
+    ),
+    DEPOSIT(
+            "/accounts/deposit",
+            AccountsDepositRequest.class,
+            AccountResponse.class),
+    CUSTOMER_ACCOUNTS(
+            "/customer/accounts",
+            BaseModel.class,
+            AccountResponse.class
+    ),
+    TRANSFER(
+            "/accounts/transfer",
+            AccountsTransferRequest.class,
+            AccountsTransferResponse.class
+    ),
+    CUSTOMER_PROFILE(
+            "/customer/profile",
+            CustomerProfileRequest.class,
+            CustomerProfileResponse.class
+    ),
+    CUSTOMER_PROFILE_GET(
+            "/customer/profile",
+            BaseModel.class,
+            Customer.class
     );
     private final String url;
     private final Class<? extends BaseModel> requestModel;

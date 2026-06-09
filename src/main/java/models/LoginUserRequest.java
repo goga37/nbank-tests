@@ -1,5 +1,6 @@
 package models;
 
+import generators.GeneratingRule;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,6 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class LoginUserRequest extends BaseModel {
+    @GeneratingRule(regex = "[A-Z]{3}[a-z]{5}\\d{2}")
     private String username;
+    @GeneratingRule(regex = "[A-Z]{3}[a-z]{3}!\\d{2}")
     private String password;
 }
