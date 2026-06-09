@@ -1,15 +1,18 @@
 package iteration2;
 
+import extensions.UserWithAccountExtension;
 import iteration1.BaseTest;
 import models.AccountResponse;
 import models.Transaction;
 import models.TransactionType;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import requests.skelethon.steps.AccountSteps;
+import requests.skelethon.steps.AccountSteps.UserContext;
 import requests.skelethon.steps.DepositSteps;
 import specs.ApiError;
 import specs.RequestSpecs;
@@ -19,15 +22,14 @@ import java.util.stream.Stream;
 
 import static generators.RandomData.randomDeposit;
 import static models.assertions.AccountAssert.assertThatAccount;
-import static requests.skelethon.steps.AccountSteps.createUserWithAccount;
 import static requests.skelethon.steps.DepositSteps.deposit;
 
+@ExtendWith(UserWithAccountExtension.class)
 public class AccountsDepositTest extends BaseTest {
 
     @Test
-    public void depositSuccess() {
+    public void depositSuccess(UserContext user) {
         double amount = randomDeposit();
-        AccountSteps.UserContext user = createUserWithAccount();
 
         AccountResponse response = deposit(user, amount);
 
@@ -47,10 +49,9 @@ public class AccountsDepositTest extends BaseTest {
     }
 
     @Test
-    public void depositAccumulationSuccess() {
+    public void depositAccumulationSuccess(UserContext user) {
         double amount1 = randomDeposit();
         double amount2 = randomDeposit();
-        AccountSteps.UserContext user = createUserWithAccount();
 
         deposit(user, amount1);
         AccountResponse response = deposit(user, amount2);
@@ -66,9 +67,7 @@ public class AccountsDepositTest extends BaseTest {
     }
 
     @Test
-    public void depositToNonExistentAccountReturns403() {
-        AccountSteps.UserContext user = createUserWithAccount();
-
+    public void depositToNonExistentAccountReturns403(UserContext user) {
         DepositSteps.deposit(user.spec(), 9999312L, 100.0, ResponseSpecs.responseStatus403());
 
         AccountResponse account = AccountSteps.getAccounts(user).getFirst();
@@ -86,10 +85,7 @@ public class AccountsDepositTest extends BaseTest {
     }
 
     @Test
-    public void depositToOtherUsersAccountReturns403() {
-        AccountSteps.UserContext user1 = createUserWithAccount();
-        AccountSteps.UserContext user2 = createUserWithAccount();
-
+    public void depositToOtherUsersAccountReturns403(UserContext user1, UserContext user2) {
         DepositSteps.deposit(user1.spec(), user2.accountId(), 100.0, ResponseSpecs.responseStatus403());
 
         AccountResponse account1 = AccountSteps.getAccounts(user1).getFirst();
@@ -109,9 +105,7 @@ public class AccountsDepositTest extends BaseTest {
 
     @ParameterizedTest
     @MethodSource("invalidAmounts")
-    public void depositInvalidAmountReturns400(double amount, ApiError expectedError) {
-        AccountSteps.UserContext user = createUserWithAccount();
-
+    public void depositInvalidAmountReturns400(double amount, ApiError expectedError, UserContext user) {
         DepositSteps.deposit(user.spec(), user.accountId(), amount, ResponseSpecs.responseStatus400(expectedError));
 
         AccountResponse account = AccountSteps.getAccounts(user).getFirst();
@@ -120,9 +114,7 @@ public class AccountsDepositTest extends BaseTest {
 
     @ParameterizedTest
     @ValueSource(doubles = {0.01, 5000.0})
-    public void depositBoundaryAmountSuccess(double amount) {
-        AccountSteps.UserContext user = createUserWithAccount();
-
+    public void depositBoundaryAmountSuccess(double amount, UserContext user) {
         AccountResponse response = deposit(user, amount);
 
         assertThatAccount(response)

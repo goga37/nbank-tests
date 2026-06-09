@@ -1,16 +1,19 @@
 package iteration2;
 
+import extensions.UserWithAccountExtension;
 import iteration1.BaseTest;
 import models.AccountResponse;
 import models.AccountsTransferResponse;
 import models.Transaction;
 import models.TransactionType;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import requests.skelethon.steps.AccountSteps;
+import requests.skelethon.steps.AccountSteps.UserContext;
 import requests.skelethon.steps.TransferSteps;
 import specs.ApiError;
 import specs.RequestSpecs;
@@ -19,21 +22,20 @@ import specs.ResponseSpecs;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static generators.RandomData.MAX_DEPOSIT_AMOUNT;
 import static generators.RandomData.randomDeposit;
 import static models.assertions.AccountAssert.assertThatAccount;
 import static models.assertions.TransferAssert.assertThatTransfer;
 import static org.assertj.core.api.Assertions.assertThat;
-import static requests.skelethon.steps.AccountSteps.createUserWithAccount;
 import static requests.skelethon.steps.DepositSteps.deposit;
 import static requests.skelethon.steps.TransferSteps.transfer;
 
+@ExtendWith(UserWithAccountExtension.class)
 public class AccountsTransferTest extends BaseTest {
 
     @Test
-    public void transferSuccess() {
+    public void transferSuccess(UserContext user1, UserContext user2) {
         double amount = randomDeposit();
-        AccountSteps.UserContext user1 = createUserWithAccount();
-        AccountSteps.UserContext user2 = createUserWithAccount();
         deposit(user1, amount);
 
         AccountsTransferResponse response = transfer(user1, user2, amount);
@@ -63,15 +65,15 @@ public class AccountsTransferTest extends BaseTest {
     }
 
     @Test
-    public void transferBetweenOwnAccountsSuccess() {
-        AccountSteps.UserContext user = createUserWithAccount();
-        AccountSteps.UserContext userSecondAccount = AccountSteps.addAccount(user);
-        deposit(user, 100.0);
+    public void transferBetweenOwnAccountsSuccess(UserContext user) {
+        double amount = randomDeposit();
+        UserContext userSecondAccount = AccountSteps.addAccount(user);
+        deposit(user, amount);
 
-        AccountsTransferResponse response = transfer(user, userSecondAccount, 100.0);
+        AccountsTransferResponse response = transfer(user, userSecondAccount, amount);
 
         assertThatTransfer(response)
-                .isSuccessful(user.accountId(), userSecondAccount.accountId(), 100.0);
+                .isSuccessful(user.accountId(), userSecondAccount.accountId(), amount);
 
         List<AccountResponse> accounts = AccountSteps.getAccounts(user);
         assertThat(accounts).hasSize(2);
@@ -90,27 +92,25 @@ public class AccountsTransferTest extends BaseTest {
                 .hasTransactionCount(2)
                 .hasTransaction(Transaction.builder()
                         .type(TransactionType.TRANSFER_OUT)
-                        .amount(100.0)
+                        .amount(amount)
                         .relatedAccountId(userSecondAccount.accountId())
                         .build());
 
         assertThatAccount(receiverAccount)
-                .hasBalance(100.0)
+                .hasBalance(amount)
                 .hasTransactionCount(1)
                 .hasTransaction(Transaction.builder()
                         .type(TransactionType.TRANSFER_IN)
-                        .amount(100.0)
+                        .amount(amount)
                         .relatedAccountId(user.accountId())
                         .build());
     }
 
     @ParameterizedTest
     @ValueSource(doubles = {0.01, 10000.0})
-    public void transferBoundaryAmountSuccess(double amount) {
-        AccountSteps.UserContext user1 = createUserWithAccount();
-        AccountSteps.UserContext user2 = createUserWithAccount();
-        deposit(user1, 5000.0);
-        deposit(user1, 5000.0);
+    public void transferBoundaryAmountSuccess(double amount, UserContext user1, UserContext user2) {
+        deposit(user1, MAX_DEPOSIT_AMOUNT);
+        deposit(user1, MAX_DEPOSIT_AMOUNT);
 
         AccountsTransferResponse response = transfer(user1, user2, amount);
 
@@ -120,7 +120,7 @@ public class AccountsTransferTest extends BaseTest {
 
         AccountResponse account1 = AccountSteps.getAccounts(user1).getFirst();
         assertThatAccount(account1)
-                .hasBalance(10000.0 - amount)
+                .hasBalance(MAX_DEPOSIT_AMOUNT * 2 - amount)
                 .hasTransactionCount(3)
                 .hasTransaction(Transaction.builder()
                         .type(TransactionType.TRANSFER_OUT)
@@ -150,10 +150,7 @@ public class AccountsTransferTest extends BaseTest {
     }
 
     @Test
-    public void transferInsufficientFundsReturns400() {
-        AccountSteps.UserContext user1 = createUserWithAccount();
-        AccountSteps.UserContext user2 = createUserWithAccount();
-
+    public void transferInsufficientFundsReturns400(UserContext user1, UserContext user2) {
         TransferSteps.transfer(user1.spec(), user1.accountId(), user2.accountId(), 100.0,
                 ResponseSpecs.responseStatus400(ApiError.TRANSFER_INSUFFICIENT_FUNDS));
 
@@ -174,10 +171,7 @@ public class AccountsTransferTest extends BaseTest {
 
     @ParameterizedTest
     @MethodSource("invalidTransferAmounts")
-    public void transferInvalidAmountReturns400(double amount, ApiError expectedError) {
-        AccountSteps.UserContext user1 = createUserWithAccount();
-        AccountSteps.UserContext user2 = createUserWithAccount();
-
+    public void transferInvalidAmountReturns400(double amount, ApiError expectedError, UserContext user1, UserContext user2) {
         TransferSteps.transfer(user1.spec(), user1.accountId(), user2.accountId(), amount,
                 ResponseSpecs.responseStatus400(expectedError));
 
@@ -188,10 +182,7 @@ public class AccountsTransferTest extends BaseTest {
     }
 
     @Test
-    public void transferFromAnotherUsersAccountReturns403() {
-        AccountSteps.UserContext user1 = createUserWithAccount();
-        AccountSteps.UserContext user2 = createUserWithAccount();
-
+    public void transferFromAnotherUsersAccountReturns403(UserContext user1, UserContext user2) {
         TransferSteps.transfer(user2.spec(), user1.accountId(), user2.accountId(), 100.0,
                 ResponseSpecs.responseStatus403());
 
@@ -202,8 +193,7 @@ public class AccountsTransferTest extends BaseTest {
     }
 
     @Test
-    public void transferToNonExistentAccountReturns400() {
-        AccountSteps.UserContext user = createUserWithAccount();
+    public void transferToNonExistentAccountReturns400(UserContext user) {
         deposit(user, 100.0);
 
         TransferSteps.transfer(user.spec(), user.accountId(), 9999312L, 100.0,

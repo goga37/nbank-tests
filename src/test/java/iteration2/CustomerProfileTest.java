@@ -1,29 +1,30 @@
 package iteration2;
 
+import extensions.UserWithAccountExtension;
 import generators.RandomModelGenerator;
 import iteration1.BaseTest;
 import models.Customer;
 import models.CustomerProfileRequest;
 import models.CustomerProfileResponse;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import requests.skelethon.steps.AccountSteps;
+import requests.skelethon.steps.AccountSteps.UserContext;
 import specs.ApiError;
 import specs.RequestSpecs;
 import specs.ResponseSpecs;
 
 import static models.assertions.CustomerAssert.assertThatCustomer;
 import static models.assertions.ProfileAssert.assertThatProfile;
-import static requests.skelethon.steps.AccountSteps.createUserWithAccount;
 import static requests.skelethon.steps.ProfileSteps.getProfile;
 import static requests.skelethon.steps.ProfileSteps.updateProfile;
 
+@ExtendWith(UserWithAccountExtension.class)
 public class CustomerProfileTest extends BaseTest {
 
     @Test
-    public void updateProfileNameSuccess() {
-        AccountSteps.UserContext user = createUserWithAccount();
+    public void updateProfileNameSuccess(UserContext user) {
         CustomerProfileRequest profileRequest = RandomModelGenerator.generate(CustomerProfileRequest.class);
 
         CustomerProfileResponse response = updateProfile(user, profileRequest);
@@ -56,9 +57,7 @@ public class CustomerProfileTest extends BaseTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"John", "John123 Smith", "John@ Smith", ""})
-    public void updateProfileInvalidNameReturns400(String name) {
-        AccountSteps.UserContext user = createUserWithAccount();
-
+    public void updateProfileInvalidNameReturns400(String name, UserContext user) {
         updateProfile(
                 user.spec(),
                 CustomerProfileRequest.builder().name(name).build(),

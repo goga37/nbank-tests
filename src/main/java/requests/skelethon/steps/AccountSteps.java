@@ -34,7 +34,7 @@ public class AccountSteps {
                 user.spec(),
                 ResponseSpecs.entityWasCreated(),
                 Endpoint.ACCOUNTS)
-                .post(null);
+                .post();
         // userId и username наследуем от исходного пользователя — новый счёт, тот же юзер
         return new UserContext(user.spec(), newAccount.getId(), user.userId(), user.username());
     }
