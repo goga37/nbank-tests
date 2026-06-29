@@ -1,31 +1,31 @@
 package iteration2;
 
 import iteration1.BaseTest;
-import models.AccountResponse;
-import models.AccountsTransferResponse;
-import models.Transaction;
-import models.TransactionType;
+import api.models.AccountResponse;
+import api.models.AccountsTransferResponse;
+import api.models.Transaction;
+import api.models.TransactionType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import requests.skelethon.steps.AccountSteps;
-import requests.skelethon.steps.TransferSteps;
-import specs.ApiError;
-import specs.RequestSpecs;
-import specs.ResponseSpecs;
+import api.skelethon.steps.AccountSteps;
+import api.skelethon.steps.TransferSteps;
+import api.specs.ApiError;
+import api.specs.RequestSpecs;
+import api.specs.ResponseSpecs;
 
 import java.util.List;
 import java.util.stream.Stream;
 
-import static generators.RandomData.randomDeposit;
-import static models.assertions.AccountAssert.assertThatAccount;
-import static models.assertions.TransferAssert.assertThatTransfer;
+import static api.generators.RandomData.randomDeposit;
+import static api.models.assertions.AccountAssert.assertThatAccount;
+import static api.models.assertions.TransferAssert.assertThatTransfer;
 import static org.assertj.core.api.Assertions.assertThat;
-import static requests.skelethon.steps.AccountSteps.createUserWithAccount;
-import static requests.skelethon.steps.DepositSteps.deposit;
-import static requests.skelethon.steps.TransferSteps.transfer;
+import static api.skelethon.steps.AccountSteps.createUserWithAccount;
+import static api.skelethon.steps.DepositSteps.deposit;
+import static api.skelethon.steps.TransferSteps.transfer;
 
 public class AccountsTransferTest extends BaseTest {
 

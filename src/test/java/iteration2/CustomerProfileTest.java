@@ -1,23 +1,23 @@
 package iteration2;
 
-import generators.RandomModelGenerator;
+import api.generators.RandomModelGenerator;
 import iteration1.BaseTest;
-import models.Customer;
-import models.CustomerProfileRequest;
-import models.CustomerProfileResponse;
+import api.models.Customer;
+import api.models.CustomerProfileRequest;
+import api.models.CustomerProfileResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import requests.skelethon.steps.AccountSteps;
-import specs.ApiError;
-import specs.RequestSpecs;
-import specs.ResponseSpecs;
+import api.skelethon.steps.AccountSteps;
+import api.specs.ApiError;
+import api.specs.RequestSpecs;
+import api.specs.ResponseSpecs;
 
-import static models.assertions.CustomerAssert.assertThatCustomer;
-import static models.assertions.ProfileAssert.assertThatProfile;
-import static requests.skelethon.steps.AccountSteps.createUserWithAccount;
-import static requests.skelethon.steps.ProfileSteps.getProfile;
-import static requests.skelethon.steps.ProfileSteps.updateProfile;
+import static api.models.assertions.CustomerAssert.assertThatCustomer;
+import static api.models.assertions.ProfileAssert.assertThatProfile;
+import static api.skelethon.steps.AccountSteps.createUserWithAccount;
+import static api.skelethon.steps.ProfileSteps.getProfile;
+import static api.skelethon.steps.ProfileSteps.updateProfile;
 
 public class CustomerProfileTest extends BaseTest {
 
