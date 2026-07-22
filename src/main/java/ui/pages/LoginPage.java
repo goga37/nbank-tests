@@ -1,6 +1,5 @@
-package ui;
+package ui.pages;
 
-import com.codeborne.selenide.Selectors;
 import com.codeborne.selenide.SelenideElement;
 
 import static com.codeborne.selenide.Selenide.$;
@@ -14,7 +13,7 @@ public class LoginPage extends BasePage<LoginPage> {
     }
 
     public LoginPage login(String username, String password) {
-        usernameInmput.sendKeys(username);
+        usernameInput.sendKeys(username);
         passwordInput.sendKeys(password);
         buttonInput.click();
         return this;
