@@ -2,12 +2,15 @@ package api.skelethon.steps;
 
 import api.models.AccountResponse;
 import api.models.CreateUserRequest;
+import api.models.Customer;
 import api.skelethon.Endpoint;
 import api.skelethon.requests.ValidatedCrudRequester;
 import api.specs.RequestSpecs;
 import api.specs.ResponseSpecs;
 
 import java.util.List;
+
+import static api.skelethon.steps.DepositSteps.buildRequest;
 
 public class UserSteps {
     private String username;
@@ -31,5 +34,20 @@ public class UserSteps {
                 RequestSpecs.authAsUser(username, password),
                 ResponseSpecs.requestReturnsOK(),
                 Endpoint.CUSTOMER_ACCOUNTS).getAll(AccountResponse[].class);
+    }
+
+    public Customer getProfile() {
+        return new ValidatedCrudRequester<Customer>(
+                RequestSpecs.authAsUser(username, password),
+                ResponseSpecs.requestReturnsOK(),
+                Endpoint.CUSTOMER_PROFILE_GET)
+                .get();
+    }
+    public AccountResponse deposit(long accountId, double amount) {
+        return new ValidatedCrudRequester<AccountResponse>(
+                RequestSpecs.authAsUser(username, password),
+                ResponseSpecs.requestReturnsOK(),
+                Endpoint.DEPOSIT)
+                .post(buildRequest(accountId, amount));
     }
 }

@@ -12,7 +12,6 @@ import java.util.List;
 
 import static api.generators.RandomData.randomDeposit;
 import static api.models.assertions.AccountAssert.assertThatAccount;
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class DepositTest extends BaseUiTest {
     @Test

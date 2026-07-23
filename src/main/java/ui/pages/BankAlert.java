@@ -14,7 +14,9 @@ public enum BankAlert {
     TRANSFER_FILL_ALL_FIELDS("❌ Please fill all fields and confirm."),
     TRANSFER_RECIPIENT_NOT_FOUND("❌ No user found with this account number."),
     TRANSFER_SUCCESS("✅ Successfully transferred $"),
-    TRANSFER_ERROR_PREFIX("❌ Error: ");
+    TRANSFER_ERROR_PREFIX("❌ Error: "),
+    PROFILE_UPDATE_SUCCESS("✅ Name updated successfully!"),
+    PROFILE_INVALID_NAME("❌ Please enter a valid name.");
 
     private final String message;
 
