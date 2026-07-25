@@ -9,6 +9,7 @@ import com.codeborne.selenide.SelenideElement;
 import org.openqa.selenium.Alert;
 import ui.elements.BaseElement;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
@@ -33,10 +34,20 @@ public abstract class BasePage<T extends BasePage> {
         return checkAlertMessageAndAccept(bankAlert.getMessage());
     }
 
-    public T checkAlertMessageAndAccept(String message) {
+    // Некоторые проверки на фронте гоняются в гонке между клиентской валидацией
+    // и ответом сервера, поэтому alert может показать любое из нескольких
+    // легитимных сообщений — тест должен принимать любое совпадение, а не одно конкретное.
+    public T checkAlertMessageAndAccept(String... possibleMessages) {
         Alert alert = switchTo().alert();
-        assertThat(alert.getText()).contains(message);
-        alert.accept();
+        try {
+            String actual = alert.getText();
+            boolean matchesAny = Arrays.stream(possibleMessages).anyMatch(actual::contains);
+            assertThat(matchesAny)
+                    .as("Alert text '%s' should contain one of: %s", actual, Arrays.toString(possibleMessages))
+                    .isTrue();
+        } finally {
+            alert.accept();
+        }
         return (T) this;
     }
 

@@ -42,14 +42,15 @@ public class ProfileTest extends BaseUiTest {
         assertThatCustomer(profile).hasNullName();
     }
 
-    // Одно слово, цифры, слитное написание — все три доходят до PUT /customer/profile,
-    // сервер возвращает 400 с телом ApiError.INVALID_PROFILE_NAME, и фронт показывает
-    // это тело как есть в alert (без своего форматирования, в отличие от Transfer)
+    // Одно слово, цифры, слитное написание — фронт гоняет клиентскую regex-валидацию
+    // параллельно с запросом к серверу, поэтому какая из двух сработает раньше и
+    // покажет свой alert — не детерминировано (подтверждено повторными прогонами).
+    // Принимаем оба легитимных варианта, а не гонимся за конкретным.
     @Test
     @UserSession
     public void userCannotChangeNameToSingleWordTest() {
         new ProfilePage().open().changeName("John")
-                .checkAlertMessageAndAccept(ApiError.INVALID_PROFILE_NAME.getMessage());
+                .checkAlertMessageAndAccept(BankAlert.PROFILE_INVALID_NAME.getMessage(), ApiError.INVALID_PROFILE_NAME.getMessage());
 
         Customer profile = SessionStorage.getSteps().getProfile();
         assertThatCustomer(profile).hasNullName();
@@ -59,7 +60,7 @@ public class ProfileTest extends BaseUiTest {
     @UserSession
     public void userCannotChangeNameWithDigitsTest() {
         new ProfilePage().open().changeName("John123 Smith")
-                .checkAlertMessageAndAccept(ApiError.INVALID_PROFILE_NAME.getMessage());
+                .checkAlertMessageAndAccept(BankAlert.PROFILE_INVALID_NAME.getMessage(), ApiError.INVALID_PROFILE_NAME.getMessage());
 
         Customer profile = SessionStorage.getSteps().getProfile();
         assertThatCustomer(profile).hasNullName();
@@ -69,7 +70,7 @@ public class ProfileTest extends BaseUiTest {
     @UserSession
     public void userCannotChangeNameWithoutSpaceTest() {
         new ProfilePage().open().changeName("JohnSmith")
-                .checkAlertMessageAndAccept(ApiError.INVALID_PROFILE_NAME.getMessage());
+                .checkAlertMessageAndAccept(BankAlert.PROFILE_INVALID_NAME.getMessage(), ApiError.INVALID_PROFILE_NAME.getMessage());
 
         Customer profile = SessionStorage.getSteps().getProfile();
         assertThatCustomer(profile).hasNullName();

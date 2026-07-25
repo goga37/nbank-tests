@@ -12,7 +12,6 @@ import ui.pages.AdminPanel;
 import ui.pages.BankAlert;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CreateUserTest extends BaseUiTest {
 
@@ -35,20 +34,17 @@ public class CreateUserTest extends BaseUiTest {
     @Test
     @AdminSession
     public void adminCannotCreateUserWithInvalidDataTest() {
-//        // ШАГ 1: админ залогинился в банке
-//        CreateUserRequest admin = CreateUserRequest.getAdmin();
-//
-//        authAsUser(admin);
-
-        // ШАГ 2: админ создает юзера в банке
         CreateUserRequest newUser = RandomModelGenerator.generate(CreateUserRequest.class);
         newUser.setUsername("a");
 
-        assertTrue(new AdminPanel().open().createUser(newUser.getUsername(), newUser.getPassword())
+        boolean userAbsentFromAdminPanelList = new AdminPanel().open().createUser(newUser.getUsername(), newUser.getPassword())
                 .checkAlertMessageAndAccept(BankAlert.USERNAME_MUST_BE_BETWEEN_3_AND_15_CHARACTERS.getMessage())
-                .getAllUsers().stream().noneMatch(userBage -> userBage.getUsername().equals(newUser.getUsername())));
+                .getAllUsers().stream().noneMatch(userBage -> userBage.getUsername().equals(newUser.getUsername()));
 
-        // ШАГ 5: проверка, что юзер НЕ создан на API
+        assertThat(userAbsentFromAdminPanelList)
+                .as("User with invalid username '%s' should not appear in the admin panel list", newUser.getUsername())
+                .isTrue();
+
         long usersWithSameUsernameAsNewUser = AdminSteps.getAllUsers().stream()
                 .filter(user -> user.getUsername().equals(newUser.getUsername()))
                 .count();
