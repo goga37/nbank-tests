@@ -11,6 +11,8 @@ import common.extensions.UserSessionExtension;
 import iteration1.BaseTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.parallel.ResourceAccessMode;
+import org.junit.jupiter.api.parallel.ResourceLock;
 
 import java.util.Map;
 
@@ -19,6 +21,7 @@ import static com.codeborne.selenide.Selenide.executeJavaScript;
 @ExtendWith(AdminSessionExtension.class)
 @ExtendWith(UserSessionExtension.class)
 @ExtendWith(BrowserMatchExtension.class)
+@ResourceLock(value = "selenoid-browser", mode = ResourceAccessMode.READ_WRITE)
 public class BaseUiTest extends BaseTest {
     @BeforeAll
     public static void setupSelenoid() {
