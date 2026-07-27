@@ -1,5 +1,6 @@
 package iteration2;
 
+import common.annotations.APIVersion;
 import iteration1.BaseTest;
 import api.models.AccountResponse;
 import api.models.Transaction;
@@ -109,6 +110,7 @@ public class AccountsDepositTest extends BaseTest {
 
     @ParameterizedTest
     @MethodSource("invalidAmounts")
+    @APIVersion("with_validation_fix")
     public void depositInvalidAmountReturns400(double amount, ApiError expectedError) {
         AccountSteps.UserContext user = createUserWithAccount();
 

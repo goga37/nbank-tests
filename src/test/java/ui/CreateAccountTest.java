@@ -2,6 +2,7 @@ package ui;
 
 import api.models.AccountResponse;
 import api.models.CreateUserRequest;
+import common.annotations.APIVersion;
 import common.annotations.UserSession;
 import common.storage.SessionStorage;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@APIVersion("with_validation_fix")
 public class CreateAccountTest extends BaseUiTest {
     @Test
     @UserSession

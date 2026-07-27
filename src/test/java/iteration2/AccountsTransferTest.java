@@ -1,5 +1,6 @@
 package iteration2;
 
+import common.annotations.APIVersion;
 import iteration1.BaseTest;
 import api.models.AccountResponse;
 import api.models.AccountsTransferResponse;
@@ -174,6 +175,7 @@ public class AccountsTransferTest extends BaseTest {
 
     @ParameterizedTest
     @MethodSource("invalidTransferAmounts")
+    @APIVersion("with_validation_fix")
     public void transferInvalidAmountReturns400(double amount, ApiError expectedError) {
         AccountSteps.UserContext user1 = createUserWithAccount();
         AccountSteps.UserContext user2 = createUserWithAccount();
