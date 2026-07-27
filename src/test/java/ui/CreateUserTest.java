@@ -7,12 +7,14 @@ import api.models.CreateUserRequest;
 import api.models.CreateUserResponse;
 import api.models.comparison.ModelAssertions;
 import common.annotations.AdminSession;
+import common.annotations.APIVersion;
 import org.junit.jupiter.api.Test;
 import ui.pages.AdminPanel;
 import ui.pages.BankAlert;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@APIVersion("with_validation_fix")
 public class CreateUserTest extends BaseUiTest {
 
     @Test

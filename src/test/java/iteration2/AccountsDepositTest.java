@@ -1,5 +1,9 @@
 package iteration2;
 
+import api.dao.AccountDao;
+import api.dao.comparison.DaoAndModelAssertions;
+import api.skelethon.steps.DataBaseSteps;
+import common.annotations.APIVersion;
 import iteration1.BaseTest;
 import api.models.AccountResponse;
 import api.models.Transaction;
@@ -44,7 +48,11 @@ public class AccountsDepositTest extends BaseTest {
         assertThatAccount(account)
                 .hasBalance(amount)
                 .hasTransactionCount(1);
+
+        AccountDao accountBalanceDao = DataBaseSteps.getAccountByAccountNumber(account.getAccountNumber());
+        DaoAndModelAssertions.assertThat(account, accountBalanceDao).match();
     }
+
 
     @Test
     public void depositAccumulationSuccess() {
@@ -63,6 +71,9 @@ public class AccountsDepositTest extends BaseTest {
         assertThatAccount(account)
                 .hasBalance(amount1 + amount2)
                 .hasTransactionCount(2);
+
+        AccountDao accountBalanceDao = DataBaseSteps.getAccountByAccountNumber(account.getAccountNumber());
+        DaoAndModelAssertions.assertThat(account, accountBalanceDao).match();
     }
 
     @Test
@@ -73,6 +84,9 @@ public class AccountsDepositTest extends BaseTest {
 
         AccountResponse account = AccountSteps.getAccounts(user).getFirst();
         assertThatAccount(account).hasBalance(0).hasNoTransactions();
+
+        AccountDao accountBalanceDao = DataBaseSteps.getAccountByAccountNumber(account.getAccountNumber());
+        DaoAndModelAssertions.assertThat(account, accountBalanceDao).match();
     }
 
     @Test
@@ -96,6 +110,12 @@ public class AccountsDepositTest extends BaseTest {
         AccountResponse account2 = AccountSteps.getAccounts(user2).getFirst();
         assertThatAccount(account1).hasNoTransactions();
         assertThatAccount(account2).hasNoTransactions();
+
+        AccountDao accountBalanceDao1 = DataBaseSteps.getAccountByAccountNumber(account1.getAccountNumber());
+        DaoAndModelAssertions.assertThat(account1, accountBalanceDao1).match();
+
+        AccountDao accountBalanceDao2 = DataBaseSteps.getAccountByAccountNumber(account2.getAccountNumber());
+        DaoAndModelAssertions.assertThat(account2, accountBalanceDao2).match();
     }
 
     private static Stream<Arguments> invalidAmounts() {
@@ -109,6 +129,7 @@ public class AccountsDepositTest extends BaseTest {
 
     @ParameterizedTest
     @MethodSource("invalidAmounts")
+    @APIVersion("with_validation_fix")
     public void depositInvalidAmountReturns400(double amount, ApiError expectedError) {
         AccountSteps.UserContext user = createUserWithAccount();
 
@@ -116,6 +137,9 @@ public class AccountsDepositTest extends BaseTest {
 
         AccountResponse account = AccountSteps.getAccounts(user).getFirst();
         assertThatAccount(account).hasBalance(0).hasNoTransactions();
+
+        AccountDao accountBalanceDao = DataBaseSteps.getAccountByAccountNumber(account.getAccountNumber());
+        DaoAndModelAssertions.assertThat(account, accountBalanceDao).match();
     }
 
     @ParameterizedTest
@@ -138,5 +162,8 @@ public class AccountsDepositTest extends BaseTest {
         assertThatAccount(account)
                 .hasBalance(amount)
                 .hasTransactionCount(1);
+
+        AccountDao accountBalanceDao = DataBaseSteps.getAccountByAccountNumber(account.getAccountNumber());
+        DaoAndModelAssertions.assertThat(account, accountBalanceDao).match();
     }
 }

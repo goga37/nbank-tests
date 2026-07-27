@@ -6,6 +6,7 @@ import api.models.TransactionType;
 import api.skelethon.steps.UserSteps;
 import common.annotations.UserSession;
 import api.specs.ApiError;
+import common.annotations.APIVersion;
 import common.storage.SessionStorage;
 import org.junit.jupiter.api.Test;
 import ui.pages.BankAlert;
@@ -90,6 +91,7 @@ public class TransferTest extends BaseUiTest {
 
     @Test
     @UserSession
+    @APIVersion("with_validation_fix")
     public void userCannotTransferZeroAmountTest() {
         String amount = "0";
 
