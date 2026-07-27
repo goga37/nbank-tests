@@ -1,6 +1,9 @@
 package iteration2;
 
+import api.dao.UserDao;
+import api.dao.comparison.DaoAndModelAssertions;
 import api.generators.RandomModelGenerator;
+import api.skelethon.steps.DataBaseSteps;
 import iteration1.BaseTest;
 import api.models.Customer;
 import api.models.CustomerProfileRequest;
@@ -34,6 +37,10 @@ public class CustomerProfileTest extends BaseTest {
         Customer profile = getProfile(user);
         assertThatCustomer(profile)
                 .matches(user.userId(), user.username(), profileRequest.getName());
+
+
+        UserDao userDao = DataBaseSteps.getUserByUsername(user.username());
+        DaoAndModelAssertions.assertThat(profile, userDao).match();
     }
 
     @Test
@@ -67,5 +74,8 @@ public class CustomerProfileTest extends BaseTest {
 
         Customer profile = getProfile(user);
         assertThatCustomer(profile).hasNullName();
+
+        UserDao userDao = DataBaseSteps.getUserByUsername(user.username());
+        DaoAndModelAssertions.assertThat(profile, userDao).match();
     }
 }

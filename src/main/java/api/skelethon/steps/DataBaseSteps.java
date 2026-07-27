@@ -73,7 +73,7 @@ public class DataBaseSteps {
         });
     }
 
-    public static void updateAccountBalance(Long accountId, Double newBalance) {
+    public static AccountDao updateAccountBalance(Long accountId, Double newBalance) {
         StepLogger.log("Update account balance in database for account ID: " + accountId + " to: " + newBalance, () -> {
             try (Connection connection = DriverManager.getConnection(
                     Config.getProperty("db.url"),
@@ -96,5 +96,6 @@ public class DataBaseSteps {
                 throw new RuntimeException("Failed to update account balance", e);
             }
         });
+        return null;
     }
 }

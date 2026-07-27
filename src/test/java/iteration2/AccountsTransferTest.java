@@ -1,5 +1,8 @@
 package iteration2;
 
+import api.dao.AccountDao;
+import api.dao.comparison.DaoAndModelAssertions;
+import api.skelethon.steps.DataBaseSteps;
 import common.annotations.APIVersion;
 import iteration1.BaseTest;
 import api.models.AccountResponse;
@@ -61,6 +64,12 @@ public class AccountsTransferTest extends BaseTest {
                         .amount(amount)
                         .relatedAccountId(user1.accountId())
                         .build());
+
+        AccountDao accountBalanceDao1 = DataBaseSteps.getAccountByAccountNumber(account1.getAccountNumber());
+        DaoAndModelAssertions.assertThat(account1, accountBalanceDao1).match();
+
+        AccountDao accountBalanceDao2 = DataBaseSteps.getAccountByAccountNumber(account2.getAccountNumber());
+        DaoAndModelAssertions.assertThat(account2, accountBalanceDao2).match();
     }
 
     @Test
@@ -103,6 +112,12 @@ public class AccountsTransferTest extends BaseTest {
                         .amount(100.0)
                         .relatedAccountId(user.accountId())
                         .build());
+
+        AccountDao accountBalanceDao1 = DataBaseSteps.getAccountByAccountNumber(senderAccount.getAccountNumber());
+        DaoAndModelAssertions.assertThat(senderAccount, accountBalanceDao1).match();
+
+        AccountDao accountBalanceDao2 = DataBaseSteps.getAccountByAccountNumber(receiverAccount.getAccountNumber());
+        DaoAndModelAssertions.assertThat(receiverAccount, accountBalanceDao2).match();
     }
 
     @ParameterizedTest
@@ -138,6 +153,12 @@ public class AccountsTransferTest extends BaseTest {
                         .amount(amount)
                         .relatedAccountId(user1.accountId())
                         .build());
+
+        AccountDao accountBalanceDao1 = DataBaseSteps.getAccountByAccountNumber(account1.getAccountNumber());
+        DaoAndModelAssertions.assertThat(account1, accountBalanceDao1).match();
+
+        AccountDao accountBalanceDao2 = DataBaseSteps.getAccountByAccountNumber(account2.getAccountNumber());
+        DaoAndModelAssertions.assertThat(account2, accountBalanceDao2).match();
     }
 
     @Test
@@ -162,6 +183,12 @@ public class AccountsTransferTest extends BaseTest {
         AccountResponse account2 = AccountSteps.getAccounts(user2).getFirst();
         assertThatAccount(account1).hasBalance(0).hasNoTransactions();
         assertThatAccount(account2).hasBalance(0).hasNoTransactions();
+
+        AccountDao accountBalanceDao1 = DataBaseSteps.getAccountByAccountNumber(account1.getAccountNumber());
+        DaoAndModelAssertions.assertThat(account1, accountBalanceDao1).match();
+
+        AccountDao accountBalanceDao2 = DataBaseSteps.getAccountByAccountNumber(account2.getAccountNumber());
+        DaoAndModelAssertions.assertThat(account2, accountBalanceDao2).match();
     }
 
     private static Stream<Arguments> invalidTransferAmounts() {
@@ -187,6 +214,12 @@ public class AccountsTransferTest extends BaseTest {
         AccountResponse account2 = AccountSteps.getAccounts(user2).getFirst();
         assertThatAccount(account1).hasBalance(0).hasNoTransactions();
         assertThatAccount(account2).hasBalance(0).hasNoTransactions();
+
+        AccountDao accountBalanceDao1 = DataBaseSteps.getAccountByAccountNumber(account1.getAccountNumber());
+        DaoAndModelAssertions.assertThat(account1, accountBalanceDao1).match();
+
+        AccountDao accountBalanceDao2 = DataBaseSteps.getAccountByAccountNumber(account2.getAccountNumber());
+        DaoAndModelAssertions.assertThat(account2, accountBalanceDao2).match();
     }
 
     @Test
@@ -201,6 +234,12 @@ public class AccountsTransferTest extends BaseTest {
         AccountResponse account2 = AccountSteps.getAccounts(user2).getFirst();
         assertThatAccount(account1).hasNoTransactions();
         assertThatAccount(account2).hasNoTransactions();
+
+        AccountDao accountBalanceDao1 = DataBaseSteps.getAccountByAccountNumber(account1.getAccountNumber());
+        DaoAndModelAssertions.assertThat(account1, accountBalanceDao1).match();
+
+        AccountDao accountBalanceDao2 = DataBaseSteps.getAccountByAccountNumber(account2.getAccountNumber());
+        DaoAndModelAssertions.assertThat(account2, accountBalanceDao2).match();
     }
 
     @Test
@@ -215,5 +254,9 @@ public class AccountsTransferTest extends BaseTest {
         assertThatAccount(account)
                 .hasBalance(100.0)
                 .hasTransactionCount(1);
+
+
+        AccountDao accountBalanceDao1 = DataBaseSteps.getAccountByAccountNumber(account.getAccountNumber());
+        DaoAndModelAssertions.assertThat(account, accountBalanceDao1).match();
     }
 }
