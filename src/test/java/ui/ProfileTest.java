@@ -4,7 +4,6 @@ import api.generators.RandomModelGenerator;
 import api.models.Customer;
 import api.models.CustomerProfileRequest;
 import api.specs.ApiError;
-import com.codeborne.selenide.Condition;
 import common.annotations.UserSession;
 import common.storage.SessionStorage;
 import org.junit.jupiter.api.Test;
@@ -12,6 +11,9 @@ import ui.pages.BankAlert;
 import ui.pages.ProfilePage;
 import ui.pages.UserDashboard;
 
+import static api.generators.RandomData.randomNameWithDigits;
+import static api.generators.RandomData.randomNameWithoutSpace;
+import static api.generators.RandomData.randomSingleWordName;
 import static api.models.assertions.CustomerAssert.assertThatCustomer;
 
 public class ProfileTest extends BaseUiTest {
@@ -23,8 +25,7 @@ public class ProfileTest extends BaseUiTest {
         new ProfilePage().open().changeName(newName)
                 .checkAlertMessageAndAccept(BankAlert.PROFILE_UPDATE_SUCCESS.getMessage());
 
-        new UserDashboard().open().getWelcomeText()
-                .shouldHave(Condition.exactText("Welcome, " + newName + "!"));
+        new UserDashboard().open().checkWelcomeText(newName);
 
         Customer profile = SessionStorage.getSteps().getProfile();
         assertThatCustomer(profile).hasName(newName);
@@ -48,7 +49,7 @@ public class ProfileTest extends BaseUiTest {
     @Test
     @UserSession
     public void userCannotChangeNameToSingleWordTest() {
-        new ProfilePage().open().changeName("John")
+        new ProfilePage().open().changeName(randomSingleWordName())
                 .checkAlertMessageAndAccept(ApiError.INVALID_PROFILE_NAME.getMessage());
 
         Customer profile = SessionStorage.getSteps().getProfile();
@@ -58,7 +59,7 @@ public class ProfileTest extends BaseUiTest {
     @Test
     @UserSession
     public void userCannotChangeNameWithDigitsTest() {
-        new ProfilePage().open().changeName("John123 Smith")
+        new ProfilePage().open().changeName(randomNameWithDigits())
                 .checkAlertMessageAndAccept(ApiError.INVALID_PROFILE_NAME.getMessage());
 
         Customer profile = SessionStorage.getSteps().getProfile();
@@ -68,7 +69,7 @@ public class ProfileTest extends BaseUiTest {
     @Test
     @UserSession
     public void userCannotChangeNameWithoutSpaceTest() {
-        new ProfilePage().open().changeName("JohnSmith")
+        new ProfilePage().open().changeName(randomNameWithoutSpace())
                 .checkAlertMessageAndAccept(ApiError.INVALID_PROFILE_NAME.getMessage());
 
         Customer profile = SessionStorage.getSteps().getProfile();

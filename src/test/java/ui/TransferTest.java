@@ -37,7 +37,7 @@ public class TransferTest extends BaseUiTest {
         String recipientName = SessionStorage.getSteps().getProfile().getName();
 
         new TransferPage().open().transfer(accountNumber1, recipientName, accountNumber2, amountAsText)
-                .checkAlertMessageAndAccept(BankAlert.TRANSFER_SUCCESS.getMessage() + amountAsText + " to account " + accountNumber2);
+                .checkAlertMessageAndAccept(BankAlert.TRANSFER_SUCCESS.withAmountToAccount(amountAsText, accountNumber2));
 
         AccountResponse updatedAccount1 = SessionStorage.getSteps().getAllAccounts().getFirst();
         AccountResponse updatedAccount2 = SessionStorage.getSteps().getAllAccounts().get(1);
@@ -206,8 +206,7 @@ public class TransferTest extends BaseUiTest {
 
         new TransferPage().open().transfer(senderAccount.getAccountNumber(), recipientName,
                         recipientAccount.getAccountNumber(), amountAsText)
-                .checkAlertMessageAndAccept(BankAlert.TRANSFER_SUCCESS.getMessage() + amountAsText
-                        + " to account " + recipientAccount.getAccountNumber());
+                .checkAlertMessageAndAccept(BankAlert.TRANSFER_SUCCESS.withAmountToAccount(amountAsText, recipientAccount.getAccountNumber()));
 
         AccountResponse updatedSenderAccount = SessionStorage.getSteps(1).getAllAccounts().getFirst();
         AccountResponse updatedRecipientAccount = SessionStorage.getSteps(2).getAllAccounts().getFirst();

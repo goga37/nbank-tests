@@ -23,4 +23,8 @@ public enum BankAlert {
     BankAlert(String message) {
         this.message = message;
     }
+
+    public String withAmountToAccount(String amount, String accountNumber) {
+        return message + amount + " to account " + accountNumber;
+    }
 }

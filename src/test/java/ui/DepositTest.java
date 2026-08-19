@@ -26,7 +26,7 @@ public class DepositTest extends BaseUiTest {
         String accountNumber = accounts.getFirst().getAccountNumber();
 
         new DepositPage().open().addDeposit(accountNumber, amountAsText)
-                .checkAlertMessageAndAccept(BankAlert.DEPOSIT_SUCCESS.getMessage() + amountAsText + " to account " + accountNumber);
+                .checkAlertMessageAndAccept(BankAlert.DEPOSIT_SUCCESS.withAmountToAccount(amountAsText, accountNumber));
 
         AccountResponse updatedAccount = SessionStorage.getSteps().getAllAccounts().getFirst();
 
@@ -35,31 +35,14 @@ public class DepositTest extends BaseUiTest {
                 .hasTransactionCount(1);
     }
 
+    // <0, =0 и пустая строка проваливаются в один и тот же if(!o || o<=0) во фронте (main.js) —
+    // это одна ветка UI-логики, а не три. Матрица граничных значений для самого бизнес-правила
+    // уже покрыта на API-уровне (AccountsDepositTest.invalidAmounts()); здесь достаточно одного
+    // представителя класса "невалидная сумма", чтобы подтвердить, что UI её отлавливает и не шлёт транзакцию.
     @Test
     @UserSession
-    public void userCannotDepositNegativeAmountTest() {
-        String amount = "-1";
-
-        UserSteps.createAccount(SessionStorage.getUser());
-
-        List<AccountResponse> accounts = SessionStorage.getSteps().getAllAccounts();
-        String accountNumber = accounts.getFirst().getAccountNumber();
-        double balance = accounts.getFirst().getBalance();
-
-        new DepositPage().open().addDeposit(accountNumber, amount)
-                .checkAlertMessageAndAccept(BankAlert.DEPOSIT_INVALID_AMOUNT.getMessage());
-
-        AccountResponse updatedAccount = SessionStorage.getSteps().getAllAccounts().getFirst();
-
-        assertThatAccount(updatedAccount)
-                .hasBalance(balance)
-                .hasNoTransactions();
-    }
-
-    @Test
-    @UserSession
-    public void userCannotDepositZeroAmountTest() {
-        String amount = "0";
+    public void userCannotDepositWithInvalidAmountTest() {
+        String amount = String.valueOf(-randomDeposit());
 
         UserSteps.createAccount(SessionStorage.getUser());
 
@@ -90,27 +73,6 @@ public class DepositTest extends BaseUiTest {
 
         new DepositPage().open().addDeposit(accountNumber, amount)
                 .checkAlertMessageAndAccept(BankAlert.DEPOSIT_AMOUNT_EXCEEDS_MAX.getMessage());
-
-        AccountResponse updatedAccount = SessionStorage.getSteps().getAllAccounts().getFirst();
-
-        assertThatAccount(updatedAccount)
-                .hasBalance(balance)
-                .hasNoTransactions();
-    }
-
-    @Test
-    @UserSession
-    public void userCannotDepositWithEmptyAmountTest() {
-        String amount = "";
-
-        UserSteps.createAccount(SessionStorage.getUser());
-
-        List<AccountResponse> accounts = SessionStorage.getSteps().getAllAccounts();
-        String accountNumber = accounts.getFirst().getAccountNumber();
-        double balance = accounts.getFirst().getBalance();
-
-        new DepositPage().open().addDeposit(accountNumber, amount)
-                .checkAlertMessageAndAccept(BankAlert.DEPOSIT_INVALID_AMOUNT.getMessage());
 
         AccountResponse updatedAccount = SessionStorage.getSteps().getAllAccounts().getFirst();
 

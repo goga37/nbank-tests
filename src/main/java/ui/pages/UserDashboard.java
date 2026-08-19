@@ -1,5 +1,6 @@
 package ui.pages;
 
+import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.Selectors;
 import com.codeborne.selenide.SelenideElement;
 import lombok.Getter;
@@ -18,6 +19,11 @@ public class UserDashboard extends BasePage<UserDashboard> {
 
     public UserDashboard createNewAccount() {
         createNewAccount.click();
+        return this;
+    }
+
+    public UserDashboard checkWelcomeText(String name) {
+        welcomeText.shouldHave(Condition.exactText("Welcome, " + name + "!"));
         return this;
     }
 }
