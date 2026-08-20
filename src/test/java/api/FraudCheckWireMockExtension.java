@@ -5,6 +5,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import common.annotations.FraudCheckMock;
+import common.annotations.FraudCheckScenario;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -50,13 +51,14 @@ public class FraudCheckWireMockExtension implements BeforeEachCallback, AfterEac
             return;
         }
 
+        FraudCheckScenario scenario = config.scenario();
         String responseBody = serialize(new FraudCheckResponseBody(
-                config.status(),
-                config.decision(),
-                config.riskScore(),
-                config.reason(),
-                config.requiresManualReview(),
-                config.additionalVerificationRequired()));
+                scenario.getMockStatus(),
+                scenario.getMockDecision(),
+                scenario.getRiskScore(),
+                scenario.getReason(),
+                scenario.isRequiresManualReview(),
+                scenario.isAdditionalVerificationRequired()));
 
         stubFor(post(urlPathMatching(config.endpoint()))
                 .willReturn(aResponse()

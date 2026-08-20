@@ -8,12 +8,15 @@ import api.skelethon.steps.AccountSteps;
 import api.skelethon.steps.AdminSteps;
 import api.specs.ResponseSpecs;
 import common.annotations.FraudCheckMock;
+import common.annotations.FraudCheckScenario;
 import common.extensions.TimingExtension;
 import iteration1.BaseTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.parallel.ResourceAccessMode;
 import org.junit.jupiter.api.parallel.ResourceLock;
+
+import static api.generators.RandomData.randomDeposit;
 
 @ExtendWith({TimingExtension.class, FraudCheckWireMockExtension.class})
 @ResourceLock(value = "fraud-check-wiremock-port", mode = ResourceAccessMode.READ_WRITE)
@@ -28,7 +31,7 @@ public class TransferWithFraudCheckTest extends BaseTest {
         AccountSteps senderSteps = new AccountSteps(user1.getUsername(), user1.getPassword());
         AccountResponse senderAccount = senderSteps.createAccount();
 
-        double depositAmount = Math.random() * 4999.9 + 0.1;
+        double depositAmount = randomDeposit();
         senderSteps.depositToAccount(senderAccount.getId(), depositAmount);
 
         CreateUserRequest user2 = AdminSteps.createUser();
@@ -40,14 +43,7 @@ public class TransferWithFraudCheckTest extends BaseTest {
     }
 
     @Test
-    @FraudCheckMock(
-            status = "SUCCESS",
-            decision = "APPROVED",
-            riskScore = 0.2,
-            reason = "Low risk transaction",
-            requiresManualReview = false,
-            additionalVerificationRequired = false
-    )
+    @FraudCheckMock(scenario = FraudCheckScenario.LOW_RISK)
     public void testTransferApprovedByFraudCheck() {
         TwoAccountsForTransferContext ctx = prepareTwoAccountsForTransfer();
 
@@ -59,30 +55,14 @@ public class TransferWithFraudCheckTest extends BaseTest {
 
         softly.assertThat(transferResponse).isNotNull();
 
-        TransferResponse expectedResponse = TransferResponse.builder()
-                .status("APPROVED")
-                .message("Transfer approved and processed immediately")
-                .amount(ctx.transferAmount())
-                .senderAccountId(ctx.senderAccount().getId())
-                .receiverAccountId(ctx.receiverAccount().getId())
-                .fraudRiskScore(0.2)
-                .fraudReason("Low risk transaction")
-                .requiresManualReview(false)
-                .requiresVerification(false)
-                .build();
+        TransferResponse expectedResponse = FraudCheckScenario.LOW_RISK.expectedResponse(
+                ctx.senderAccount().getId(), ctx.receiverAccount().getId(), ctx.transferAmount());
 
         ModelAssertions.assertThatModels(expectedResponse, transferResponse).match();
     }
 
     @Test
-    @FraudCheckMock(
-            status = "SUCCESS",
-            decision = "REJECTED",
-            riskScore = 0.9,
-            reason = "High risk transaction pattern detected",
-            requiresManualReview = false,
-            additionalVerificationRequired = true
-    )
+    @FraudCheckMock(scenario = FraudCheckScenario.HIGH_RISK)
     public void testTransferRequiresVerificationByFraudCheck() {
         TwoAccountsForTransferContext ctx = prepareTwoAccountsForTransfer();
 
@@ -94,30 +74,14 @@ public class TransferWithFraudCheckTest extends BaseTest {
 
         softly.assertThat(transferResponse).isNotNull();
 
-        TransferResponse expectedResponse = TransferResponse.builder()
-                .status("VERIFICATION_REQUIRED")
-                .message("Additional verification required")
-                .amount(ctx.transferAmount())
-                .senderAccountId(ctx.senderAccount().getId())
-                .receiverAccountId(ctx.receiverAccount().getId())
-                .fraudRiskScore(0.9)
-                .fraudReason("High risk transaction pattern detected")
-                .requiresManualReview(false)
-                .requiresVerification(true)
-                .build();
+        TransferResponse expectedResponse = FraudCheckScenario.HIGH_RISK.expectedResponse(
+                ctx.senderAccount().getId(), ctx.receiverAccount().getId(), ctx.transferAmount());
 
         ModelAssertions.assertThatModels(expectedResponse, transferResponse).match();
     }
 
     @Test
-    @FraudCheckMock(
-            status = "SUCCESS",
-            decision = "MANUAL_REVIEW",
-            riskScore = 0.6,
-            reason = "Transaction pattern requires human review",
-            requiresManualReview = true,
-            additionalVerificationRequired = false
-    )
+    @FraudCheckMock(scenario = FraudCheckScenario.MEDIUM_RISK)
     public void testTransferRequiresManualReviewByFraudCheck() {
         TwoAccountsForTransferContext ctx = prepareTwoAccountsForTransfer();
 
@@ -129,22 +93,15 @@ public class TransferWithFraudCheckTest extends BaseTest {
 
         softly.assertThat(transferResponse).isNotNull();
 
-        TransferResponse expectedResponse = TransferResponse.builder()
-                .status("MANUAL_REVIEW_REQUIRED")
-                .message("Transfer requires manual review")
-                .amount(ctx.transferAmount())
-                .senderAccountId(ctx.senderAccount().getId())
-                .receiverAccountId(ctx.receiverAccount().getId())
-                .fraudRiskScore(0.6)
-                .fraudReason("Transaction pattern requires human review")
-                .requiresManualReview(true)
-                .requiresVerification(false)
-                .build();
+        TransferResponse expectedResponse = FraudCheckScenario.MEDIUM_RISK.expectedResponse(
+                ctx.senderAccount().getId(), ctx.receiverAccount().getId(), ctx.transferAmount());
 
         ModelAssertions.assertThatModels(expectedResponse, transferResponse).match();
     }
 
-    // Фрод-сервис недоступен/ломается (500) — банк не должен падать, а должен деградировать в ручную проверку
+    // Фрод-сервис недоступен/ломается (500) — банк не должен падать, а должен деградировать в ручную проверку.
+    // Итоговый ответ банка в этом случае совпадает с тем, что банк отдаёт при явном решении MEDIUM_RISK
+    // (см. testTransferRequiresManualReviewByFraudCheck) — переиспользуем эти ожидания, а не дублируем их.
     @Test
     @FraudCheckMock(httpStatus = 500)
     public void testTransferFallsBackToManualReviewWhenFraudServiceIsDown() {
@@ -157,9 +114,9 @@ public class TransferWithFraudCheckTest extends BaseTest {
         );
 
         softly.assertThat(transferResponse).isNotNull();
-        softly.assertThat(transferResponse.getStatus()).isEqualTo("MANUAL_REVIEW_REQUIRED");
+        softly.assertThat(transferResponse.getStatus()).isEqualTo(FraudCheckScenario.MEDIUM_RISK.getExpectedTransferStatus());
         softly.assertThat(transferResponse.isRequiresManualReview()).isTrue();
-        softly.assertThat(transferResponse.getMessage()).isEqualTo("Transfer requires manual review");
+        softly.assertThat(transferResponse.getMessage()).isEqualTo(FraudCheckScenario.MEDIUM_RISK.getExpectedTransferMessage());
     }
 
     @Test
@@ -168,16 +125,20 @@ public class TransferWithFraudCheckTest extends BaseTest {
         CreateUserRequest user1 = AdminSteps.createUser();
         AccountSteps sender = new AccountSteps(user1.getUsername(), user1.getPassword());
         AccountResponse senderAccount = sender.createAccount();
-        sender.depositToAccount(senderAccount.getId(), 10.0);
+        double depositAmount = randomDeposit();
+        sender.depositToAccount(senderAccount.getId(), depositAmount);
 
         CreateUserRequest user2 = AdminSteps.createUser();
         AccountSteps receiver = new AccountSteps(user2.getUsername(), user2.getPassword());
         AccountResponse receiverAccount = receiver.createAccount();
 
+        // заведомо больше баланса — не конкретное число важно, а то, что перевод превышает депозит
+        double transferAmount = depositAmount + randomDeposit();
+
         sender.transferWithFraudCheckRaw(
                 senderAccount.getId(),
                 receiverAccount.getId(),
-                1000.0,
+                transferAmount,
                 ResponseSpecs.responseStatus400()
         );
     }
@@ -186,24 +147,19 @@ public class TransferWithFraudCheckTest extends BaseTest {
     // Это может быть незамеченным пробелом в бизнес-валидации — стоит обсудить с командой, баг это или нет.
     // Тест фиксирует фактическое поведение системы, а не предположение о том, как "должно быть".
     @Test
-    @FraudCheckMock(
-            status = "SUCCESS",
-            decision = "APPROVED",
-            riskScore = 0.2,
-            reason = "Low risk transaction",
-            requiresManualReview = false,
-            additionalVerificationRequired = false
-    )
+    @FraudCheckMock(scenario = FraudCheckScenario.LOW_RISK)
     public void testTransferToSameAccountIsCurrentlyAllowed() {
         CreateUserRequest user = AdminSteps.createUser();
         AccountSteps steps = new AccountSteps(user.getUsername(), user.getPassword());
         AccountResponse account = steps.createAccount();
-        steps.depositToAccount(account.getId(), 100.0);
+        double depositAmount = randomDeposit();
+        steps.depositToAccount(account.getId(), depositAmount);
 
-        TransferResponse transferResponse = steps.transferWithFraudCheck(account.getId(), account.getId(), 50.0);
+        double transferAmount = depositAmount / 2; // заведомо меньше баланса — перевод должен пройти
+        TransferResponse transferResponse = steps.transferWithFraudCheck(account.getId(), account.getId(), transferAmount);
 
         softly.assertThat(transferResponse).isNotNull();
-        softly.assertThat(transferResponse.getStatus()).isEqualTo("APPROVED");
+        softly.assertThat(transferResponse.getStatus()).isEqualTo(FraudCheckScenario.LOW_RISK.getExpectedTransferStatus());
         softly.assertThat(transferResponse.getSenderAccountId()).isEqualTo(account.getId());
         softly.assertThat(transferResponse.getReceiverAccountId()).isEqualTo(account.getId());
     }

@@ -11,34 +11,10 @@ import java.lang.annotation.Target;
 public @interface FraudCheckMock {
 
     /**
-     * The fraud check status to return
+     * Сценарий, который вернёт замоканный фрод-сервис, и ожидаемый в ответ на него ответ банка.
+     * Игнорируется, если httpStatus() != 200 — тогда фрод-сервис имитирует отказ целиком.
      */
-    String status() default "SUCCESS";
-
-    /**
-     * The fraud check decision
-     */
-    String decision() default "APPROVED";
-
-    /**
-     * The risk score (0.0 to 1.0)
-     */
-    double riskScore() default 0.2;
-
-    /**
-     * The reason for the fraud check result
-     */
-    String reason() default "Low risk transaction";
-
-    /**
-     * Whether manual review is required
-     */
-    boolean requiresManualReview() default false;
-
-    /**
-     * Whether additional verification is required
-     */
-    boolean additionalVerificationRequired() default false;
+    FraudCheckScenario scenario() default FraudCheckScenario.LOW_RISK;
 
     /**
      * The WireMock port to use
