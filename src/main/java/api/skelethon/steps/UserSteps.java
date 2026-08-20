@@ -10,18 +10,12 @@ import api.specs.ResponseSpecs;
 
 import java.util.List;
 
-import static api.skelethon.steps.DepositSteps.buildRequest;
-
 public class UserSteps {
     private String username;
     private String password;
 
     public static AccountResponse createAccount(CreateUserRequest userRequest) {
-        return new ValidatedCrudRequester<AccountResponse>(
-                RequestSpecs.authAsUser(userRequest.getUsername(), userRequest.getPassword()),
-                ResponseSpecs.entityWasCreated(),
-                Endpoint.ACCOUNTS)
-                .post(null);
+        return AccountSteps.postAccount(RequestSpecs.authAsUser(userRequest.getUsername(), userRequest.getPassword()));
     }
 
     public UserSteps(String username, String password) {
@@ -44,10 +38,6 @@ public class UserSteps {
                 .get();
     }
     public AccountResponse deposit(long accountId, double amount) {
-        return new ValidatedCrudRequester<AccountResponse>(
-                RequestSpecs.authAsUser(username, password),
-                ResponseSpecs.requestReturnsOK(),
-                Endpoint.DEPOSIT)
-                .post(buildRequest(accountId, amount));
+        return DepositSteps.postDeposit(RequestSpecs.authAsUser(username, password), accountId, amount);
     }
 }

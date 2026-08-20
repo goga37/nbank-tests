@@ -13,11 +13,16 @@ public class DepositSteps {
 
     // Успешный депозит — десериализует ответ в AccountResponse
     public static AccountResponse deposit(AccountSteps.UserContext user, double amount) {
+        return postDeposit(user.spec(), user.accountId(), amount);
+    }
+
+    // общий POST /accounts/deposit — переиспользуется deposit(UserContext, amount) и UserSteps.deposit(accountId, amount)
+    static AccountResponse postDeposit(RequestSpecification spec, long accountId, double amount) {
         return new ValidatedCrudRequester<AccountResponse>(
-                user.spec(),
+                spec,
                 ResponseSpecs.requestReturnsOK(),
                 Endpoint.DEPOSIT)
-                .post(buildRequest(user.accountId(), amount));
+                .post(buildRequest(accountId, amount));
     }
 
     // Депозит с произвольными спецификациями — для негативных сценариев
@@ -29,8 +34,8 @@ public class DepositSteps {
 
     static AccountsDepositRequest buildRequest(long accountId, double amount) {
         return AccountsDepositRequest.builder()
-                .id(accountId)
-                .balance(amount)
+                .accountId(accountId)
+                .amount(amount)
                 .build();
     }
 }
