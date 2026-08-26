@@ -35,4 +35,10 @@ public class RandomData {
     public static String randomNameWithoutSpace() {
         return new Generex("[A-Z][a-z]{1,9}[A-Z][a-z]{1,9}").random();
     }
+
+    // Формат реального номера счёта — ACC + 8 hex-символов (см. AccountResponse.accountNumber).
+    // Генерируем в том же формате, чтобы получить заведомо несуществующий, но правдоподобный номер.
+    public static String randomNonExistentAccountNumber() {
+        return new Generex("ACC[0-9A-F]{8}").random();
+    }
 }

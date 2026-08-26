@@ -14,6 +14,7 @@ import ui.pages.TransferPage;
 import java.util.List;
 
 import static api.generators.RandomData.randomDeposit;
+import static api.generators.RandomData.randomNonExistentAccountNumber;
 import static api.models.assertions.AccountAssert.assertThatAccount;
 
 public class TransferTest extends BaseUiTest {
@@ -92,12 +93,13 @@ public class TransferTest extends BaseUiTest {
     @UserSession
     public void userCannotTransferZeroAmountTest() {
         String amount = "0";
+        double initialDeposit = randomDeposit();
 
         UserSteps.createAccount(SessionStorage.getUser());
         UserSteps.createAccount(SessionStorage.getUser());
 
         List<AccountResponse> accounts = SessionStorage.getSteps().getAllAccounts();
-        AccountResponse depositedAccount1 = SessionStorage.getSteps().deposit(accounts.getFirst().getId(), 100.0);
+        AccountResponse depositedAccount1 = SessionStorage.getSteps().deposit(accounts.getFirst().getId(), initialDeposit);
 
         String accountNumber1 = accounts.getFirst().getAccountNumber();
         String accountNumber2 = accounts.get(1).getAccountNumber();
@@ -119,7 +121,7 @@ public class TransferTest extends BaseUiTest {
     public void userCannotTransferToNonExistentAccountTest() {
         double amount = randomDeposit();
         String amountAsText = String.valueOf(amount);
-        String nonExistentAccountNumber = "ACC999999";
+        String nonExistentAccountNumber = randomNonExistentAccountNumber();
 
         UserSteps.createAccount(SessionStorage.getUser());
 

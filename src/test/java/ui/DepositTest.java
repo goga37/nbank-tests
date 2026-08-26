@@ -5,10 +5,14 @@ import api.skelethon.steps.UserSteps;
 import common.annotations.UserSession;
 import common.storage.SessionStorage;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import ui.pages.BankAlert;
 import ui.pages.DepositPage;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import static api.generators.RandomData.randomDeposit;
 import static api.models.assertions.AccountAssert.assertThatAccount;
@@ -35,36 +39,17 @@ public class DepositTest extends BaseUiTest {
                 .hasTransactionCount(1);
     }
 
-    // <0, =0 и пустая строка проваливаются в один и тот же if(!o || o<=0) во фронте (main.js) —
-    // это одна ветка UI-логики, а не три. Матрица граничных значений для самого бизнес-правила
-    // уже покрыта на API-уровне (AccountsDepositTest.invalidAmounts()); здесь достаточно одного
-    // представителя класса "невалидная сумма", чтобы подтвердить, что UI её отлавливает и не шлёт транзакцию.
-    @Test
-    @UserSession
-    public void userCannotDepositWithInvalidAmountTest() {
-        String amount = String.valueOf(-randomDeposit());
-
-        UserSteps.createAccount(SessionStorage.getUser());
-
-        List<AccountResponse> accounts = SessionStorage.getSteps().getAllAccounts();
-        String accountNumber = accounts.getFirst().getAccountNumber();
-        double balance = accounts.getFirst().getBalance();
-
-        new DepositPage().open().addDeposit(accountNumber, amount)
-                .checkAlertMessageAndAccept(BankAlert.DEPOSIT_INVALID_AMOUNT.getMessage());
-
-        AccountResponse updatedAccount = SessionStorage.getSteps().getAllAccounts().getFirst();
-
-        assertThatAccount(updatedAccount)
-                .hasBalance(balance)
-                .hasNoTransactions();
+    private static Stream<Arguments> invalidDepositAmounts() {
+        return Stream.of(
+                Arguments.of(String.valueOf(-randomDeposit()), BankAlert.DEPOSIT_INVALID_AMOUNT),
+                Arguments.of("5000.01", BankAlert.DEPOSIT_AMOUNT_EXCEEDS_MAX)
+        );
     }
 
-    @Test
+    @ParameterizedTest
+    @MethodSource("invalidDepositAmounts")
     @UserSession
-    public void userCannotDepositAmountAboveMaxTest() {
-        String amount = "5000.01";
-
+    public void userCannotDepositWithInvalidAmountTest(String amount, BankAlert expectedAlert) {
         UserSteps.createAccount(SessionStorage.getUser());
 
         List<AccountResponse> accounts = SessionStorage.getSteps().getAllAccounts();
@@ -72,7 +57,7 @@ public class DepositTest extends BaseUiTest {
         double balance = accounts.getFirst().getBalance();
 
         new DepositPage().open().addDeposit(accountNumber, amount)
-                .checkAlertMessageAndAccept(BankAlert.DEPOSIT_AMOUNT_EXCEEDS_MAX.getMessage());
+                .checkAlertMessageAndAccept(expectedAlert.getMessage());
 
         AccountResponse updatedAccount = SessionStorage.getSteps().getAllAccounts().getFirst();
 

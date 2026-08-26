@@ -7,9 +7,14 @@ import api.specs.ApiError;
 import common.annotations.UserSession;
 import common.storage.SessionStorage;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import ui.pages.BankAlert;
 import ui.pages.ProfilePage;
 import ui.pages.UserDashboard;
+
+import java.util.stream.Stream;
 
 import static api.generators.RandomData.randomNameWithDigits;
 import static api.generators.RandomData.randomNameWithoutSpace;
@@ -31,46 +36,21 @@ public class ProfileTest extends BaseUiTest {
         assertThatCustomer(profile).hasName(newName);
     }
 
-    // Пустое поле не долетает до API — фронт проверяет name.trim() на клиенте
-    // и показывает свой alert, не сервера (см. main.js: if(r.trim()) ... else alert(...))
-    @Test
-    @UserSession
-    public void userCannotChangeNameWithEmptyValueTest() {
-        new ProfilePage().open().changeName("")
-                .checkAlertMessageAndAccept(BankAlert.PROFILE_INVALID_NAME.getMessage());
-
-        Customer profile = SessionStorage.getSteps().getProfile();
-        assertThatCustomer(profile).hasNullName();
+    private static Stream<Arguments> invalidProfileNames() {
+        return Stream.of(
+                Arguments.of("", BankAlert.PROFILE_INVALID_NAME.getMessage()),
+                Arguments.of(randomSingleWordName(), ApiError.INVALID_PROFILE_NAME.getMessage()),
+                Arguments.of(randomNameWithDigits(), ApiError.INVALID_PROFILE_NAME.getMessage()),
+                Arguments.of(randomNameWithoutSpace(), ApiError.INVALID_PROFILE_NAME.getMessage())
+        );
     }
 
-    // Одно слово, цифры, слитное написание — все три доходят до PUT /customer/profile,
-    // сервер возвращает 400 с телом ApiError.INVALID_PROFILE_NAME, и фронт показывает
-    // это тело как есть в alert (без своего форматирования, в отличие от Transfer)
-    @Test
+    @ParameterizedTest
+    @MethodSource("invalidProfileNames")
     @UserSession
-    public void userCannotChangeNameToSingleWordTest() {
-        new ProfilePage().open().changeName(randomSingleWordName())
-                .checkAlertMessageAndAccept(ApiError.INVALID_PROFILE_NAME.getMessage());
-
-        Customer profile = SessionStorage.getSteps().getProfile();
-        assertThatCustomer(profile).hasNullName();
-    }
-
-    @Test
-    @UserSession
-    public void userCannotChangeNameWithDigitsTest() {
-        new ProfilePage().open().changeName(randomNameWithDigits())
-                .checkAlertMessageAndAccept(ApiError.INVALID_PROFILE_NAME.getMessage());
-
-        Customer profile = SessionStorage.getSteps().getProfile();
-        assertThatCustomer(profile).hasNullName();
-    }
-
-    @Test
-    @UserSession
-    public void userCannotChangeNameWithoutSpaceTest() {
-        new ProfilePage().open().changeName(randomNameWithoutSpace())
-                .checkAlertMessageAndAccept(ApiError.INVALID_PROFILE_NAME.getMessage());
+    public void userCannotChangeNameToInvalidValueTest(String newName, String expectedMessage) {
+        new ProfilePage().open().changeName(newName)
+                .checkAlertMessageAndAccept(expectedMessage);
 
         Customer profile = SessionStorage.getSteps().getProfile();
         assertThatCustomer(profile).hasNullName();
