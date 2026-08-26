@@ -27,7 +27,7 @@ public class DepositSteps {
                 .post(buildRequest(accountId, amount));
     }
 
-    private static AccountsDepositRequest buildRequest(long accountId, double amount) {
+    static AccountsDepositRequest buildRequest(long accountId, double amount) {
         return AccountsDepositRequest.builder()
                 .id(accountId)
                 .balance(amount)
